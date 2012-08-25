@@ -4,9 +4,10 @@
 """
 
 import iso8601
-from config import CONFIG
-from https import https_post
-from exceptions import BilldotcomError
+import uuid
+from config import CONFIG, get_logger
+from https import https_post, https_post_operation
+from exceptions import BilldotcomError, ServerResponseError
 
 class Session(object):
     """This models and handles serialization of the Bill object.
@@ -42,7 +43,11 @@ class Session(object):
         return xmlstring
 
     def getcurrenttime(self):
-        """Returns a datetime object representing the Bill.com system time."""
+        """Gets Bill.com's system time.
+
+        Returns:
+            datetime. System time as reported by Bill.com
+        """
         xmlstring = self.__build_request__("""
             <getcurrenttime sessionId="{sessionId}">
             </getcurrenttime>
@@ -51,6 +56,69 @@ class Session(object):
         response = https_post(xmlstring)
         thetime = response.getElementsByTagName('currentTime')[0].firstChild.data
         return iso8601.parse_date(thetime)
+
+    def __get_result_or_fail(self, operationresults, transaction):
+        LOG = get_logger()
+        transaction = str(transaction)
+        try:
+            return operationresults['OK'][transaction]
+        except AttributeError:
+            message = operationresults['failed'][transaction]['message']
+            LOG.error(message)
+            raise ServerResponseError(message)
+
+    def create_bill(self, bill):
+        """Creates a Bill object on the server.
+
+        Args:
+            bill: A Bill object with the required fields filled in.
+
+        Returns:
+            The newly created Bill's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <create_bill>
+                    {bill}
+                </create_bill>
+            </operation>
+        """, bill=bill.xml(), transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+        return result.getElementsByTagName('id')[0].firstChild.data
+
+    def create_vendor(self, vendor):
+        """Creates a Vendor object on the server.
+
+        Args:
+            vendor: A Vendor object with the required fields filled in.
+
+        Returns:
+            The newly created Vendor's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <create_vendor>
+                    {vendor}
+                </create_vendor>
+            </operation>
+        """, vendor=vendor.xml(), transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+        return result.getElementsByTagName('id')[0].firstChild.data
+
 
     def __enter__(self):
         self.login()

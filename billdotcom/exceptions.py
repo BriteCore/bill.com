@@ -1,4 +1,4 @@
-"""Exceptions that are used in billdotcom."""
+"""Exceptions are defined in billdotcom for ease of use."""
 
 
 class BilldotcomError(Exception):

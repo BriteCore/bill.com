@@ -1,20 +1,27 @@
 """A client library for Bill.com in Python.
 
+To use this library you will need developer access. For more information please
+visit the `Bill.com developer page <http://www.bill.com/resources/developer-program>`_.
+
 .. moduleauthor:: Amanda Quint <amanda@britecore.com>, Matt Thompson <matt@britecore.com>
 """
 
+from bill import Bill
 from config import get_logger, CONFIG, validate_config
 from dtd import DTD
-from session import Session
 from https import https_post
+from session import Session
+from vendor import Vendor
 import exceptions
 
 __all__ = [
-        get_logger,
+        Bill,
         CONFIG,
         DTD,
         Session,
-        validate_config,
-        https_post,
+        Vendor,
         exceptions,
+        get_logger,
+        https_post,
+        validate_config,
 ]
