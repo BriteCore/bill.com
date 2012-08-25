@@ -13,12 +13,26 @@ Contents:
 
 .. automodule:: billdotcom
 
-.. autoclass:: Session
+Sessions and Authentication
+===========================
+
+.. automodule:: billdotcom.session
    :members:
 
-.. autofunction:: validate_config
 
-.. autoexception:: ConfigurationError
+Configuration
+=============
+
+.. automodule:: billdotcom.config
+   :members:
+
+
+Exceptions
+==========
+
+.. automodule:: billdotcom.exceptions
+   :members:
+
 
 Indices and tables
 ==================

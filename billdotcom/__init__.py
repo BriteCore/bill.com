@@ -3,15 +3,18 @@
 .. moduleauthor:: Amanda Quint <amanda@britecore.com>, Matt Thompson <matt@britecore.com>
 """
 
-from config import LOG, CONFIG, validate_config, ConfigurationError
+from config import get_logger, CONFIG, validate_config
 from dtd import DTD
 from session import Session
+from https import https_post
+import exceptions
 
 __all__ = [
+        get_logger,
         CONFIG,
-        ConfigurationError,
         DTD,
-        LOG,
         Session,
         validate_config,
+        https_post,
+        exceptions,
 ]

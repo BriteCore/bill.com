@@ -7,6 +7,9 @@ setup(
     author='Amanda Quint, Matthew Thompson',
     author_email='amanda@britecore.com, matt@britecore.com',
     packages=['billdotcom'],
+    scripts=[
+        'bin/billdotcom_getorglist',
+    ],
     url='https://github.com/IntuitiveWebSolutions/bill.com',
     license='LICENSE.txt',
     description='A client library for Bill.com in Python.',
