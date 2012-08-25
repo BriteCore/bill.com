@@ -3,6 +3,7 @@
    :synopsis: Session management (login, logout, etc).
 """
 
+import iso8601
 from config import CONFIG
 from https import https_post
 from exceptions import BilldotcomError
@@ -21,9 +22,39 @@ class Session(object):
 
     def __init__(self):
         self.session_id = None
+        self.appkey = CONFIG.get('authentication', 'appkey')
+
+    def __build_request__(self, content, **kwargs):
+        data = {
+            'appkey': self.appkey,
+            'sessionId': self.session_id,
+            'content': content,
+        }
+
+        data.update(kwargs)
+
+        xmlstring = """
+        <request version="1.0" applicationkey="{{appkey}}">
+            {0}
+        </request>
+        """.format(content).format(**data)
+
+        return xmlstring
+
+    def getcurrenttime(self):
+        """Returns a datetime object representing the Bill.com system time."""
+        xmlstring = self.__build_request__("""
+            <getcurrenttime sessionId="{sessionId}">
+            </getcurrenttime>
+        """)
+
+        response = https_post(xmlstring)
+        thetime = response.getElementsByTagName('currentTime')[0].firstChild.data
+        return iso8601.parse_date(thetime)
 
     def __enter__(self):
         self.login()
+        return self
 
     def __exit__(self, type, value, traceback):
         self.logout()
@@ -32,27 +63,23 @@ class Session(object):
         """Initiate a session on the server."""
 
         data = {
-            'appkey': CONFIG.get('authentication', 'appkey'),
+            'appkey': self.appkey,
             'email': CONFIG.get('authentication', 'email'),
             'password': CONFIG.get('authentication', 'password'),
-            'orgid': CONFIG.get('organization', 'id'),
+            'orgId': CONFIG.get('organization', 'id'),
         }
 
-        xmlstring = """
-        <request version="1.0" applicationkey="{appkey}">
+        xmlstring = self.__build_request__("""
             <login>
                 <username>{email}</username>
                 <password>{password}</password>
-                <orgID>{orgid}</orgID>
+                <orgID>{orgId}</orgID>
             </login>
-        </request>
-        """.format(**data)
+        """, **data)
 
         response = https_post(xmlstring)
 
         self.session_id = response.getElementsByTagName('sessionId')[0].firstChild.data
-
-        print response.toprettyxml()
 
     def logout(self):
         """Shut down a session on the server."""
@@ -60,19 +87,12 @@ class Session(object):
         if not self.session_id:
             raise BilldotcomError("cannot logout on a session that has not logged in")
 
-        data = {
-            'appkey': CONFIG.get('authentication', 'appkey'),
-            'sessionId': self.session_id
-        }
 
-        xmlstring = """
-        <request version="1.0" applicationkey="{appkey}">
+        xmlstring = self.__build_request__("""
             <logout sessionId="{sessionId}">
             </logout>
-        </request>
-        """.format(**data)
+        """)
 
-        response = https_post(xmlstring)
-
-        print response.toprettyxml()
+        https_post(xmlstring)
+        self.session_id = None
 

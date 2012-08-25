@@ -21,13 +21,16 @@ def https_post(xmlstring):
 
     try:
         dom = xml.dom.minidom.parseString(response.text)
-        status = dom.getElementsByTagName('status')[0].firstChild.data
+        status = dom.getElementsByTagName('status')
+
+        if status:
+            status = status[0].firstChild.data
     except:
         message = 'sent {0} got badly formatted reponse: {1}'.format(xmlstring, response.text)
         LOG.error(message)
         raise
 
-    if status != 'OK':
+    if status and status != 'OK':
         errorcode = dom.getElementsByTagName('errorcode')[0].firstChild.data
         errormessage = dom.getElementsByTagName('errormessage')[0].firstChild.data
         message = "server reponse: {0} {1} {2}".format(status, errorcode, errormessage)
