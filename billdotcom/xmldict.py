@@ -25,9 +25,15 @@ class XMLDict(collections.MutableMapping):
             if key not in kwargs:
                 raise TypeError("{0} is required".format(key))
 
-        self.__root_name = root_name
+        self.root_name = root_name
         self.__payload = {}
         self.__payload.update(kwargs)
+
+        # the nested objects are {'rootname': [list, of, things]}
+        self.nested_object = {}
+
+        # the nested map is {'rootname': ChildClass}
+        self.nested_map = {}
 
     def __getitem__(self, key):
         return self.__payload[self.__keytransform__(key)]
@@ -50,7 +56,6 @@ class XMLDict(collections.MutableMapping):
     def __str__(self):
         return self.xml()
 
-
     @classmethod
     def parse(cls, dom):
         """Reads fields from XML to construct a new object.
@@ -70,18 +75,37 @@ class XMLDict(collections.MutableMapping):
 
         dom.normalize()
 
-        def element_children(root):
-            return (x for x in root.childNodes if x.nodeType == xml.dom.Node.ELEMENT_NODE)
+        def child_filter(root, node_type):
+            return [x for x in root.childNodes if x.nodeType == node_type]
 
-        data = {
-            field.tagName: field.firstChild.data.strip()
-            for field in element_children(dom)
-        }
+        data = {}
+        nested = {}
 
-        return cls(ignore_required=True, **data)
+        for field in child_filter(dom, xml.dom.Node.ELEMENT_NODE):
+            # some nodes will have children (nested data)
+            children = child_filter(field, xml.dom.Node.ELEMENT_NODE)
 
-    def xml(self):
-        """Renders the dict payload as an XML object
+            if children:
+                nested[field.tagName] = children
+            else:
+                data[field.tagName] = field.firstChild.data.strip()
+
+        result = cls(ignore_required=True, **data)
+
+        for name, dom_list in nested.items():
+            if name not in result.nested_map:
+                print result.root_name
+                print result.nested_map
+                raise ValueError('child node {0} is not expected to be a member of {1}'.format(name, result.root_name))
+
+            nested_cls = result.nested_map[name]
+            result.nested_object[name] = [nested_cls.parse(x) for x in dom_list]
+
+        return result
+
+    def xml(self, indent=0):
+        """Renders the dict payload as an XML object. Attempts to pad out nested stuff
+        for easier reading.
 
         Args:
             root_name (str): the name of the root node
@@ -96,10 +120,17 @@ class XMLDict(collections.MutableMapping):
             else:
                 return str(value)
 
+        pad = indent*'\t'
+
         fields = [
-            '<{0}>{1}</{0}>'.format(key, valuetransform(value))
+            '\t{pad}<{0}>{1}</{0}>'.format(key, valuetransform(value), pad=pad)
             for (key, value) in self.__payload.items()
         ]
 
-        return '<{0}>\n{1}\n</{0}>'.format(self.__root_name, '\n'.join(fields))
+        for root, nodes in self.nested_object.items():
+            sep = '\n{pad}'.format(pad=pad)
+            xml_nodes = sep.join([x.xml(indent+2) for x in nodes])
+            fields.append('\t{pad}<{0}>\n{1}\n\t{pad}</{0}>'.format(root, xml_nodes, pad=pad))
+
+        return '{pad}<{0}>\n{1}\n{pad}</{0}>'.format(self.root_name, '\n'.join(fields), pad=indent*'\t')
 

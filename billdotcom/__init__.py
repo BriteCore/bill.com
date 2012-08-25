@@ -6,7 +6,7 @@ visit the `Bill.com developer page <http://www.bill.com/resources/developer-prog
 .. moduleauthor:: Amanda Quint <amanda@britecore.com>, Matt Thompson <matt@britecore.com>
 """
 
-from bill import Bill
+from bill import Bill, BillLineItem
 from config import get_logger, CONFIG, validate_config
 from dtd import DTD
 from https import https_post
@@ -16,6 +16,7 @@ import exceptions
 
 __all__ = [
         Bill,
+        BillLineItem,
         CONFIG,
         DTD,
         Session,
