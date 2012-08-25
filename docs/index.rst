@@ -19,6 +19,13 @@ Bills and Payments
    :members:
 
 
+Contacts and Vendors
+====================
+
+.. automodule:: billdotcom.vendor
+   :members:
+
+
 Sessions and Authentication
 ===========================
 

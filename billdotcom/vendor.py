@@ -10,7 +10,11 @@ class Vendor(XMLDict):
     that payments are sent to.
 
     Required:
-        name (str): The name of the vendor
+        ==== ===== =======================
+        *Argument* *Description*
+        ---------- -----------------------
+        name (str) The name of the vendor
+        ==== ===== =======================
 
     Creation:
         Create a Vendor object and create it on the server side with

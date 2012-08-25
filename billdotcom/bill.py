@@ -9,12 +9,16 @@ class Bill(XMLDict):
     """This models the Bill object.
 
     Required:
-        externalId (str): The developer-created ID from your system.
-        invoiceNumber (str): The invoice number or identifier.
-        vendorId (str): The ID of the vendor that is creating the bill.
-        invoiceDate (date): The date that the invoice was billed on.
-        dueDate (date): The date that the invoice must be paid by.
-        amount (Decimal): The amount of money that is billed.
+        ============= ========== ===============================================
+        *Argument*               *Description*
+        ------------------------ -----------------------------------------------
+        externalId    (str):     The developer-created ID from your system.
+        invoiceNumber (str):     The invoice number or identifier.
+        vendorId      (str):     The ID of the vendor that is creating the bill.
+        invoiceDate   (date):    The date that the invoice was billed on.
+        dueDate       (date):    The date that the invoice must be paid by.
+        amount        (Decimal): The amount of money that is billed.
+        ============= ========== ===============================================
 
     Creation:
         Create a Bill object and create it on the server side with
