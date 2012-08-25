@@ -5,6 +5,8 @@
 
 import iso8601
 import uuid
+from bill import Bill
+from vendor import Vendor
 from config import CONFIG, get_logger
 from https import https_post, https_post_operation
 from exceptions import BilldotcomError, ServerResponseError
@@ -119,6 +121,46 @@ class Session(object):
         result = self.__get_result_or_fail(response, transaction)
         return result.getElementsByTagName('id')[0].firstChild.data
 
+
+    def get_list(self, object_name, filters=None):
+        """Gets data back from the server. Filters can be used to select specific objects by fields.
+        The objects will be transformed into the corresponding classes and returned.
+
+        Args:
+            object_name: The type of object to list. Supported object types and their mappings:
+                * "bill" for Bill objects
+                * "vendor" for Vendor objects
+
+        Returns:
+            A list of object classes, such as a list of :class:`billdotcom.bill.Bill`s.
+
+        Raises:
+            ServerResponseError
+        """
+
+        object_mapper = {
+            "bill": Bill,
+            "vendor": Vendor,
+        }
+
+        if object_name not in object_mapper:
+            raise ValueError("{0} is not a supported object type".format(object_name))
+
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <get_list object="{object_name}">
+                </get_list>
+            </operation>
+        """, object_name=object_name, transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+
+        constructor = object_mapper[object_name]
+        object_data = [constructor.parse(x) for x in result.getElementsByTagName(object_name)]
+        return object_data
 
     def __enter__(self):
         self.login()

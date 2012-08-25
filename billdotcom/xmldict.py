@@ -5,6 +5,7 @@
 
 import collections
 import datetime
+import xml.dom
 
 class XMLDict(collections.MutableMapping):
     """Implements a dict-like object that can seralize itself as XML.
@@ -18,7 +19,12 @@ class XMLDict(collections.MutableMapping):
         with :func:`billdotcom.session.Session.create_bill`. For example:
     """
 
-    def __init__(self, root_name, **kwargs):
+    def __init__(self, root_name, required, **kwargs):
+
+        for key in required:
+            if key not in kwargs:
+                raise TypeError("{0} is required".format(key))
+
         self.__root_name = root_name
         self.__payload = {}
         self.__payload.update(kwargs)
@@ -43,6 +49,36 @@ class XMLDict(collections.MutableMapping):
 
     def __str__(self):
         return self.xml()
+
+
+    @classmethod
+    def parse(cls, dom):
+        """Reads fields from XML to construct a new object.
+
+        Args:
+            dom (xml.dom): a DOM object that contains the correct fields.
+
+        Returns:
+            A newly constructed object.
+
+        Raises:
+            ValueError
+        """
+
+        # if dom.tagName != cls.root_name:
+            # raise ValueError("expected root tag {0} but got {1}".format(cls.__root_name, dom.tagName))
+
+        dom.normalize()
+
+        def element_children(root):
+            return (x for x in root.childNodes if x.nodeType == xml.dom.Node.ELEMENT_NODE)
+
+        data = {
+            field.tagName: field.firstChild.data.strip()
+            for field in element_children(dom)
+        }
+
+        return cls(ignore_required=True, **data)
 
     def xml(self):
         """Renders the dict payload as an XML object
