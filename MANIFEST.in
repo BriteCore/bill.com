@@ -1,0 +1,4 @@
+include *.txt
+include *.md
+recursive-include billdotcom *.py
+recursive-include docs *
