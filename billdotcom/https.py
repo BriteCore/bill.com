@@ -13,14 +13,19 @@ def get_status_and_message(node):
     Returns:
         Tuple of (status, message) where status is 'OK' or 'failed'.
     '''
-    status = node.getElementsByTagName('status')
+    # status = node.getElementsByTagName('status')
+    status = [x for x in node.childNodes if x.nodeType == xml.dom.Node.ELEMENT_NODE and x.tagName == "status"]
     message = None
 
     if status:
         status = status[0].firstChild.data
 
         if status != 'OK':
-            errorcode = node.getElementsByTagName('errorcode')[0].firstChild.data
+            errorcode = node.getElementsByTagName('errorcode')
+            if errorcode:
+                errorcode = errorcode[0].firstChild.data
+            else:
+                errorcode = "NOCODE"
             errormessage = node.getElementsByTagName('errormessage')[0].firstChild.data
             message = "{0} {1} {2}".format(status, errorcode, errormessage)
 
@@ -100,8 +105,6 @@ def https_post_operation(xmlstring):
             result['failed'][transaction] = {'status':status, 'message':message}
         else:
             result['OK'][transaction] = operation
-
-    print result
 
     return result
 

@@ -6,7 +6,10 @@
 import iso8601
 import uuid
 from bill import Bill
+from chartofaccount import ChartOfAccount
+from customer import Customer
 from vendor import Vendor
+from vendorcredit import VendorCredit
 from config import CONFIG, get_logger
 from https import https_post, https_post_operation
 from exceptions import BilldotcomError, ServerResponseError
@@ -64,7 +67,7 @@ class Session(object):
         transaction = str(transaction)
         try:
             return operationresults['OK'][transaction]
-        except AttributeError:
+        except (AttributeError, KeyError):
             message = operationresults['failed'][transaction]['message']
             LOG.error(message)
             raise ServerResponseError(message)
@@ -95,6 +98,61 @@ class Session(object):
         result = self.__get_result_or_fail(response, transaction)
         return result.getElementsByTagName('id')[0].firstChild.data
 
+
+    def create_chartofaccount(self, chartOfAccount):
+        """Creates a Chart of Account object on the server.
+
+        Args:
+            chartOfAccount: A Chart of Account object with the required fields filled in.
+
+        Returns:
+            The newly created created Chart of Account's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <create_chartofaccount>
+                    {chartOfAccount}
+                </create_chartofaccount>
+            </operation>
+        """, chartOfAccount=chartOfAccount.xml(), transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+        return result.getElementsByTagName('id')[0].firstChild.data
+
+
+    def create_customer(self, customer):
+        """Creates a Customer object on the server.
+
+        Args:
+            customer: A Customer object with the required fields filled in.
+
+        Returns:
+            The newly created created Customer's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <create_customer>
+                    {customer}
+                </create_customer>
+            </operation>
+        """, customer=customer.xml(), transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+        return result.getElementsByTagName('id')[0].firstChild.data
+
+
     def create_vendor(self, vendor):
         """Creates a Vendor object on the server.
 
@@ -122,6 +180,33 @@ class Session(object):
         return result.getElementsByTagName('id')[0].firstChild.data
 
 
+    def create_vendorcredit(self, vendorcredit):
+        """Creates a Vendor Credit object on the server.
+
+        Args:
+            vendorcredit: A Vendor Credit object with the required fields filled in.
+
+        Returns:
+            The newly created Vendor Credit's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <create_vendorcredit>
+                    {vendorcredit}
+                </create_vendorcredit>
+            </operation>
+        """, vendorcredit=vendorcredit.xml(), transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+        return result.getElementsByTagName('id')[0].firstChild.data
+
+
     def get_list(self, object_name, filters=None):
         """Gets data back from the server. Filters can be used to select specific objects by fields.
         The objects will be transformed into the corresponding classes and returned.
@@ -129,7 +214,10 @@ class Session(object):
         Args:
             object_name: The type of object to list. Supported object types and their mappings:
                 * "bill" for Bill objects
+                * "chartOfAccount" for ChartOfAccount objects
+                * "customer" for Customer objects
                 * "vendor" for Vendor objects
+                * "vendorcredit" for VendorCredit objects
 
         Returns:
             A list of object classes, such as a list of :class:`billdotcom.bill.Bill`s.
@@ -140,7 +228,14 @@ class Session(object):
 
         object_mapper = {
             "bill": Bill,
+            "chartofaccount": ChartOfAccount,
+            "customer": Customer,
             "vendor": Vendor,
+            "vendorcredit": VendorCredit,
+        }
+
+        rename_dict = {
+            "chartofaccount": 'chartOfAccount'
         }
 
         if object_name not in object_mapper:
@@ -159,6 +254,11 @@ class Session(object):
         result = self.__get_result_or_fail(response, transaction)
 
         constructor = object_mapper[object_name]
+
+        #This is retarded
+        if object_name in rename_dict:
+            object_name = rename_dict[object_name]
+
         object_data = [constructor.parse(x) for x in result.getElementsByTagName(object_name)]
         return object_data
 
