@@ -8,6 +8,8 @@ import uuid
 from bill import Bill
 from chartofaccount import ChartOfAccount
 from customer import Customer
+from invoice import Invoice
+from item import Item
 from vendor import Vendor
 from vendorcredit import VendorCredit
 from config import CONFIG, get_logger
@@ -152,6 +154,59 @@ class Session(object):
         result = self.__get_result_or_fail(response, transaction)
         return result.getElementsByTagName('id')[0].firstChild.data
 
+    def create_invoice(self, invoice):
+        """Creates a Invoice object on the server.
+
+        Args:
+            invoice: An Invoice object with the required fields filled in.
+
+        Returns:
+            The newly created Invoice's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <create_invoice>
+                    {invoice}
+                </create_invoice>
+            </operation>
+        """, invoice=invoice.xml(), transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+        return result.getElementsByTagName('id')[0].firstChild.data
+
+
+    def create_item(self, item):
+        """Creates an Item object on the server.
+
+        Args:
+            item: An Item object with the required fields filled in.
+
+        Returns:
+            The newly created created Item's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <create_item>
+                    {item}
+                </create_item>
+            </operation>
+        """, item=item.xml(), transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        result = self.__get_result_or_fail(response, transaction)
+        return result.getElementsByTagName('id')[0].firstChild.data
+
 
     def create_vendor(self, vendor):
         """Creates a Vendor object on the server.
@@ -216,6 +271,8 @@ class Session(object):
                 * "bill" for Bill objects
                 * "chartOfAccount" for ChartOfAccount objects
                 * "customer" for Customer objects
+                * "invoice" for Invoice objects
+                * "item" for Item objects
                 * "vendor" for Vendor objects
                 * "vendorcredit" for VendorCredit objects
 
@@ -230,6 +287,8 @@ class Session(object):
             "bill": Bill,
             "chartofaccount": ChartOfAccount,
             "customer": Customer,
+            "invoice": Invoice,
+            "item": Item,
             "vendor": Vendor,
             "vendorcredit": VendorCredit,
         }

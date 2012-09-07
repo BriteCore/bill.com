@@ -22,6 +22,7 @@ def get_status_and_message(node):
 
         if status != 'OK':
             errorcode = node.getElementsByTagName('errorcode')
+            print node.toprettyxml()
             if errorcode:
                 errorcode = errorcode[0].firstChild.data
             else:
@@ -63,10 +64,14 @@ def https_post(xmlstring, ignore_status=False):
     except:
         message = 'sent {0} got badly formatted reponse: {1}'.format(xmlstring, response.text)
         LOG.error(message)
+        LOG.error("SENT " + xmlstring)
+        LOG.error("RECEIVED " + dom.toxml())
         raise
 
     if not ignore_status and status and status != 'OK':
         LOG.error(message)
+        LOG.error("SENT " + xmlstring)
+        LOG.error("RECEIVED " + dom.toxml())
         raise ServerResponseError(message)
 
     return dom
@@ -105,6 +110,13 @@ def https_post_operation(xmlstring):
             result['failed'][transaction] = {'status':status, 'message':message}
         else:
             result['OK'][transaction] = operation
+
+    if result['failed']:
+        LOG = get_logger()
+        LOG.error("Some transactions failed: {0}".format(result['failed']))
+        LOG.error("SENT " + xmlstring)
+        LOG.error("RECEIVED " + dom.toxml())
+
 
     return result
 
