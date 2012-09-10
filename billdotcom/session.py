@@ -89,6 +89,27 @@ class Session(object):
         response = https_post_operation(xmlstring)
         return self.__get_result_or_fail(response, transaction)
 
+    def custom_request(self, name, **kwargs):
+        """Construct and send a custom request.
+
+        Args:
+            name: The name of the operation. For instance, 'send_vendor_invite'.
+            kwargs: Key values of data to send in the payload.
+
+        Returns:
+            XML dom response.
+
+        Raises:
+            ServerReponseError
+        """
+
+        payload = [
+            '<{0}>{1}</{0}>'.format(key, XMLDict.valuetransform(value))
+            for key, value in kwargs.items()
+        ]
+
+        return self.__request(name, payload)
+
     def create_bill(self, bill):
         """Creates a Bill object on the server.
 
@@ -195,6 +216,21 @@ class Session(object):
         """
         result = self.__request('update_vendor', vendor.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
+
+    def send_vendor_invite(self, vendorId, email):
+        """Updates a Vendor object on the server. Update with 'isActive'=2 to deactivate it.
+
+        Args:
+            vendor: A Vendor object with the required fields filled in.
+
+        Returns:
+            The updated Vendor's ID.
+
+        Raises:
+            ServerResponseError
+        """
+
+        return self.custom_request('send_vendor_invite', vendorId=vendorId, email=email)
 
     def create_vendorcredit(self, vendorcredit):
         """Creates a Vendor Credit object on the server.
