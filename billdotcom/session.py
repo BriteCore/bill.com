@@ -75,6 +75,20 @@ class Session(object):
             LOG.error(message)
             raise ServerResponseError(message)
 
+    def __request(self, name, payload):
+        transaction = uuid.uuid4()
+
+        xmlstring = self.__build_request__("""
+            <operation transactionId="{transaction}" sessionId="{sessionId}">
+                <{name}>
+                    {payload}
+                </{name}>
+            </operation>
+        """, name=name, payload=payload, transaction=transaction)
+
+        response = https_post_operation(xmlstring)
+        return self.__get_result_or_fail(response, transaction)
+
     def create_bill(self, bill):
         """Creates a Bill object on the server.
 
@@ -87,20 +101,8 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <create_bill>
-                    {bill}
-                </create_bill>
-            </operation>
-        """, bill=bill.xml(), transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
+        result = self.__request('create_bill', bill.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
-
 
     def create_chartofaccount(self, chartOfAccount):
         """Creates a Chart of Account object on the server.
@@ -114,18 +116,7 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <create_chartofaccount>
-                    {chartOfAccount}
-                </create_chartofaccount>
-            </operation>
-        """, chartOfAccount=chartOfAccount.xml(), transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
+        result = self.__request('create_chartofaccount', chartOfAccount.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
 
 
@@ -141,19 +132,9 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <create_customer>
-                    {customer}
-                </create_customer>
-            </operation>
-        """, customer=customer.xml(), transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
+        result = self.__request('create_customer', customer.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
+
 
     def create_invoice(self, invoice):
         """Creates a Invoice object on the server.
@@ -167,20 +148,8 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <create_invoice>
-                    {invoice}
-                </create_invoice>
-            </operation>
-        """, invoice=invoice.xml(), transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
+        result = self.__request('create_invoice', invoice.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
-
 
     def create_item(self, item):
         """Creates an Item object on the server.
@@ -194,20 +163,8 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <create_item>
-                    {item}
-                </create_item>
-            </operation>
-        """, item=item.xml(), transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
+        result = self.__request('create_item', item.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
-
 
     def create_vendor(self, vendor):
         """Creates a Vendor object on the server.
@@ -221,20 +178,8 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <create_vendor>
-                    {vendor}
-                </create_vendor>
-            </operation>
-        """, vendor=vendor.xml(), transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
+        result = self.__request('create_vendor', vendor.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
-
 
     def create_vendorcredit(self, vendorcredit):
         """Creates a Vendor Credit object on the server.
@@ -248,22 +193,10 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <create_vendorcredit>
-                    {vendorcredit}
-                </create_vendorcredit>
-            </operation>
-        """, vendorcredit=vendorcredit.xml(), transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
+        result = self.__request('create_vendorcredit', vendorcredit.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
 
-
-    def get_list(self, object_name, filters=[]):
+    def get_list(self, object_name, filters=[], **kwargs):
         """Gets data back from the server. Filters can be used to select specific objects by fields.
         The objects will be transformed into the corresponding classes and returned.
 
@@ -284,6 +217,10 @@ class Session(object):
                 An example of using a filter:
                     >>> with Session() as s:
                     >>>     s.get_list('bill', filters=[('invoiceDate', '<', date.today())])
+
+            kwargs: You can also specify filters are simple kwargs. For example:
+                >>> with Session() as s:
+                >>>     s.get_list('bill', id='testID')
 
         Returns:
             A list of object classes, such as a list of :class:`billdotcom.bill.Bill`s.
@@ -311,22 +248,30 @@ class Session(object):
 
         transaction = uuid.uuid4()
 
-        filter_xml = []
-        for name, op, value in filters:
-            valid = ('=', '<', '>', '!=', '<=', '>=', 'IN')
-            if op not in valid:
+
+        def filter_to_xml(name, op, value):
+            valid_ops = ('=', '<', '>', '!=', '<=', '>=', 'IN')
+            if op not in valid_ops:
                 raise ValueError('filter operator {0} is not supported'.format(op))
 
             op = op.replace('>', '&gt;').replace('<', '&lt;')
 
             value = XMLDict.valuetransform(value)
 
-            filter_xml.append('''
+            return '''
                 <expression>
                     <field>{0}</field>
                     <operator>{1}</operator>
                     <value>{2}</value>
-                </expression>'''.format(name, op, value))
+                </expression>'''.format(name, op, value)
+
+
+        filter_xml = []
+        for name, op, value in filters:
+            filter_xml.append(filter_to_xml(name, op, value))
+
+        for key, value in kwargs.items():
+            filter_xml.append(filter_to_xml(key, '=', value))
 
         if filter_xml:
             filter_xml = '''

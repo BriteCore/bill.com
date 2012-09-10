@@ -64,8 +64,8 @@ class Bill(XMLDict):
         }
 
     def add_line_item(self, line_item):
-        self.nested_objects.setdefault('billLineItems', [])
-        self.nested_objects['billLineItems'].append(line_item)
+        self.nested_object.setdefault('billLineItems', [])
+        self.nested_object['billLineItems'].append(line_item)
 
 
 class BillLineItem(XMLDict):
