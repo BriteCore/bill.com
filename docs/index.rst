@@ -18,6 +18,8 @@ Bills and Payments
 .. automodule:: billdotcom.bill
    :members:
 
+.. automodule:: billdotcom.vendorcredit
+   :members:
 
 Contacts and Vendors
 ====================
