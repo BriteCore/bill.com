@@ -7,6 +7,7 @@ visit the `Bill.com developer page <http://www.bill.com/resources/developer-prog
 """
 
 from bill import Bill, BillLineItem
+from vendorcredit import VendorCredit, VendorCreditLineItem
 from config import get_logger, CONFIG, validate_config
 from dtd import DTD
 from https import https_post
@@ -21,6 +22,8 @@ __all__ = [
         DTD,
         Session,
         Vendor,
+        VendorCredit,
+        VendorCreditLineItem,
         exceptions,
         get_logger,
         https_post,
