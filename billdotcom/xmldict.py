@@ -7,6 +7,7 @@ import collections
 import datetime
 import xml.dom
 
+
 class XMLDict(collections.MutableMapping):
     """Implements a dict-like object that can seralize itself as XML.
 
@@ -55,6 +56,17 @@ class XMLDict(collections.MutableMapping):
 
     def __str__(self):
         return self.xml()
+
+    def __repr__(self):
+        content = ("{0}='{1}'".format(key, value) for key, value in self.__payload.items())
+        return '{0}({1})'.format(self.__class__.__name__, ', '.join(content))
+
+    @classmethod
+    def valuetransform(cls, value):
+        if type(value) in (datetime.datetime, datetime.date):
+            return value.strftime('%m/%d/%y')
+        else:
+            return str(value).replace('<', '&lt;').replace('>', '&gt;')
 
     @classmethod
     def parse(cls, dom):
@@ -114,16 +126,10 @@ class XMLDict(collections.MutableMapping):
             String representing the dict. Fields are excluded if they aren't provided.
         """
 
-        def valuetransform(value):
-            if type(value) in (datetime.datetime, datetime.date):
-                return value.strftime('%m/%d/%y')
-            else:
-                return str(value)
-
         pad = indent*'\t'
 
         fields = [
-            '\t{pad}<{0}>{1}</{0}>'.format(key, valuetransform(value), pad=pad)
+            '\t{pad}<{0}>{1}</{0}>'.format(key, XMLDict.valuetransform(value), pad=pad)
             for (key, value) in self.__payload.items()
         ]
 

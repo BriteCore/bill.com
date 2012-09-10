@@ -15,6 +15,7 @@ from vendorcredit import VendorCredit
 from config import CONFIG, get_logger
 from https import https_post, https_post_operation
 from exceptions import BilldotcomError, ServerResponseError
+from xmldict import XMLDict
 
 class Session(object):
     """This models and handles serialization of the Bill object.
@@ -275,6 +276,14 @@ class Session(object):
                 * "item" for Item objects
                 * "vendor" for Vendor objects
                 * "vendorcredit" for VendorCredit objects
+            filters: A list of tuples representing filters to query with. Supported operators are:
+                    =, <, >, !=, <=, >=, IN
+                These operators can be used with any field in the model you are querying, as long
+                as it has a data type of ID, date, Enum, IntegrationId, or ExternalId. Notice
+                that String is **not** included!  See the official Bill.com documentation for more.
+                An example of using a filter:
+                    >>> with Session() as s:
+                    >>>     s.get_list('bill', filters=[('invoiceDate', '<', date.today())])
 
         Returns:
             A list of object classes, such as a list of :class:`billdotcom.bill.Bill`s.
@@ -302,19 +311,45 @@ class Session(object):
 
         transaction = uuid.uuid4()
 
+        filter_xml = []
+        for name, op, value in filters:
+            valid = ('=', '<', '>', '!=', '<=', '>=', 'IN')
+            if op not in valid:
+                raise ValueError('filter operator {0} is not supported'.format(op))
+
+            op = op.replace('>', '&gt;').replace('<', '&lt;')
+
+            value = XMLDict.valuetransform(value)
+
+            filter_xml.append('''
+                <expression>
+                    <field>{0}</field>
+                    <operator>{1}</operator>
+                    <value>{2}</value>
+                </expression>'''.format(name, op, value))
+
+        if filter_xml:
+            filter_xml = '''
+                <filter>
+                    {0}
+                </filter>'''.format('\n'.join(filter_xml))
+        else:
+            filter_xml = ''
+
         xmlstring = self.__build_request__("""
             <operation transactionId="{transaction}" sessionId="{sessionId}">
                 <get_list object="{object_name}">
+                    {filter_xml}
                 </get_list>
             </operation>
-        """, object_name=object_name, transaction=transaction)
+        """, object_name=object_name, transaction=transaction, filter_xml=filter_xml)
 
         response = https_post_operation(xmlstring)
         result = self.__get_result_or_fail(response, transaction)
 
         constructor = object_mapper[object_name]
 
-        #This is retarded
+        # gross
         if object_name in rename_dict:
             object_name = rename_dict[object_name]
 
