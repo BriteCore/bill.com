@@ -63,8 +63,10 @@ class XMLDict(collections.MutableMapping):
 
     @classmethod
     def valuetransform(cls, value):
-        if type(value) in (datetime.datetime, datetime.date):
+        if type(value) == datetime.date:
             return value.strftime('%m/%d/%y')
+        elif type(value) == datetime.datetime:
+            return value.strftime('%m/%d/%Y %H:%M:%S')
         else:
             return str(value).replace('<', '&lt;').replace('>', '&gt;')
 
