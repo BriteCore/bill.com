@@ -56,7 +56,7 @@ class VendorCredit(XMLDict):
         if ignore_required == True:
             required = ()
 
-        super(VendorCredit, self).__init__('vendorcredit', required, **kwargs)
+        super(VendorCredit, self).__init__('vendorCredit', required, **kwargs)
 
         self.nested_map = {
             'vendorCreditLineItems': VendorCreditLineItem

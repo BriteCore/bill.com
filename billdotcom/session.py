@@ -232,11 +232,11 @@ class Session(object):
 
         return self.custom_request('send_vendor_invite', vendorId=vendorId, email=email)
 
-    def create_vendorcredit(self, vendorcredit):
+    def create_vendorcredit(self, vendorCredit):
         """Creates a Vendor Credit object on the server.
 
         Args:
-            vendorcredit: A Vendor Credit object with the required fields filled in.
+            vendorCredit: A Vendor Credit object with the required fields filled in.
 
         Returns:
             The newly created Vendor Credit's ID.
@@ -244,7 +244,7 @@ class Session(object):
         Raises:
             ServerResponseError
         """
-        result = self.__request('create_vendorcredit', vendorcredit.xml())
+        result = self.__request('create_vendorcredit', vendorCredit.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
 
     def get_list(self, object_name, filters=[], **kwargs):
@@ -254,7 +254,7 @@ class Session(object):
         Args:
             object_name: The type of object to list. Supported object types and their mappings:
                 * "bill" for Bill objects
-                * "chartOfAccount" for ChartOfAccount objects
+                * "chartofaccount" for ChartOfAccount objects
                 * "customer" for Customer objects
                 * "invoice" for Invoice objects
                 * "item" for Item objects
@@ -290,8 +290,10 @@ class Session(object):
             "vendorcredit": VendorCredit,
         }
 
-        rename_dict = {
-            "chartofaccount": 'chartOfAccount'
+        # some stuff doesn't work right unless it's the right case...
+        name_mapper = {
+            "vendorcredit": "vendorCredit",
+            "chartofaccount": "chartOfAccount"
         }
 
         if object_name not in object_mapper:
@@ -344,12 +346,9 @@ class Session(object):
         result = self.__get_result_or_fail(response, transaction)
 
         constructor = object_mapper[object_name]
+        root_name = name_mapper.get(object_name, object_name)
 
-        # gross
-        if object_name in rename_dict:
-            object_name = rename_dict[object_name]
-
-        object_data = [constructor.parse(x) for x in result.getElementsByTagName(object_name)]
+        object_data = [constructor.parse(x) for x in result.getElementsByTagName(root_name)]
         return object_data
 
     def __enter__(self):

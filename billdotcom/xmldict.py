@@ -104,6 +104,9 @@ class XMLDict(collections.MutableMapping):
             else:
                 data[field.tagName] = field.firstChild.data.strip()
 
+        if not data:
+            raise ValueError("no fields found for input to {0} model".format(cls.__root_name))
+
         result = cls(ignore_required=True, **data)
 
         for name, dom_list in nested.items():
