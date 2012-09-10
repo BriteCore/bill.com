@@ -24,12 +24,24 @@ class Vendor(XMLDict):
             >>>     a = Vendor(name="Test Vendor")
             >>>     a['id'] = s.create_vendor(a)
 
+    Updates:
+        It's easy to create and update your contacts and vendors.
+        For example, to activate a given vendor:
+            >>> vendor = s.get_list('vendor', id='00901YYOFDJNAHP2xlg9')[0]
+            >>> vendor['isActive'] = 1
+            >>> s.update_vendor(vendor)
+
+        If you want to deactivate all your vendors, you might try something like this:
+            >>> for vendor in s.get_list('vendor'):
+            >>>     vendor['isActive'] = 2
+            >>>     s.update_vendor(vendor)
+
     Retrieval:
         Download a list of Vendor objects from the server with the Session.
         For example:
 
             >>> with Session() as s:
-            >>>     print [x['id'] for x in s.get_list('vendor')]
+            >>>     print s.get_list('vendor')
     """
 
     def __init__(self, ignore_required=False, **kwargs):

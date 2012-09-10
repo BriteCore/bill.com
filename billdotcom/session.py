@@ -181,6 +181,21 @@ class Session(object):
         result = self.__request('create_vendor', vendor.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
 
+    def update_vendor(self, vendor):
+        """Updates a Vendor object on the server. Update with 'isActive'=2 to deactivate it.
+
+        Args:
+            vendor: A Vendor object with the required fields filled in.
+
+        Returns:
+            The updated Vendor's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        result = self.__request('update_vendor', vendor.xml())
+        return result.getElementsByTagName('id')[0].firstChild.data
+
     def create_vendorcredit(self, vendorcredit):
         """Creates a Vendor Credit object on the server.
 
