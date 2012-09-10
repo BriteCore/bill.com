@@ -263,7 +263,7 @@ class Session(object):
         return result.getElementsByTagName('id')[0].firstChild.data
 
 
-    def get_list(self, object_name, filters=None):
+    def get_list(self, object_name, filters=[]):
         """Gets data back from the server. Filters can be used to select specific objects by fields.
         The objects will be transformed into the corresponding classes and returned.
 
