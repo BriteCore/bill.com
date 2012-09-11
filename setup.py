@@ -8,7 +8,8 @@ setup(
     author_email='amanda@britecore.com, matt@britecore.com',
     packages=['billdotcom'],
     scripts=[
-        'bin/billdotcom_getorglist',
+        'bin/billdotcom_getorglist.py',
+        'bin/billdotcom_send_vendor_invite.py',
     ],
     url='https://github.com/IntuitiveWebSolutions/bill.com',
     license='LICENSE.txt',
