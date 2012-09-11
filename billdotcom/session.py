@@ -156,6 +156,20 @@ class Session(object):
         result = self.__request('create_customer', customer.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
 
+    def update_customer(self, customer):
+        """Updates a Customer object on the server. Update with 'isActive'=2 to deactivate it.
+
+        Args:
+            customer: A Customer object with the required fields filled in.
+
+        Returns:
+            The updated Customer's ID.
+
+        Raises:
+            ServerResponseError
+        """
+        result = self.__request('update_customer', customer.xml())
+        return result.getElementsByTagName('id')[0].firstChild.data
 
     def create_invoice(self, invoice):
         """Creates a Invoice object on the server.
