@@ -238,7 +238,7 @@ class Session(object):
             vendor: A Vendor object with the required fields filled in.
 
         Returns:
-            The updated Vendor's ID.
+            The DOM from the request.
 
         Raises:
             ServerResponseError
@@ -260,6 +260,22 @@ class Session(object):
         """
         result = self.__request('create_vendorcredit', vendorCredit.xml())
         return result.getElementsByTagName('id')[0].firstChild.data
+
+    def set_external_id(self, id, externalId):
+        """Sets the external id for an object on Bill.com's side.
+
+        Args:
+            id: The id of the object on Bill.com's side.
+            externalId: The custom id to set.
+
+        Returns:
+            The DOM from the request.
+
+        Raises:
+            ServerResponseError
+        """
+        return self.custom_request('set_external_id', id=id, externalId=externalId)
+
 
     def get_list(self, object_name, filters=[], **kwargs):
         """Gets data back from the server. Filters can be used to select specific objects by fields.

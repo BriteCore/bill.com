@@ -6,6 +6,7 @@
 import collections
 import datetime
 import xml.dom
+from xml.sax.saxutils import escape
 
 
 class XMLDict(collections.MutableMapping):
@@ -68,7 +69,7 @@ class XMLDict(collections.MutableMapping):
         elif type(value) == datetime.datetime:
             return value.strftime('%m/%d/%Y %H:%M:%S')
         else:
-            return str(value).replace('<', '&lt;').replace('>', '&gt;')
+            return escape(value)
 
     @classmethod
     def parse(cls, dom):

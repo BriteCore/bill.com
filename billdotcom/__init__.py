@@ -7,19 +7,24 @@ visit the `Bill.com developer page <http://www.bill.com/resources/developer-prog
 """
 
 from bill import Bill, BillLineItem
-from vendorcredit import VendorCredit, VendorCreditLineItem
 from config import get_logger, CONFIG, validate_config
 from dtd import DTD
+from exceptions import BilldotcomError, ConfigurationError, HTTPError, ServerResponseError
 from https import https_post
 from session import Session
 from vendor import Vendor
+from vendorcredit import VendorCredit, VendorCreditLineItem
 import exceptions
 
 __all__ = [
         Bill,
         BillLineItem,
+        BilldotcomError,
         CONFIG,
+        ConfigurationError,
         DTD,
+        HTTPError,
+        ServerResponseError,
         Session,
         Vendor,
         VendorCredit,
