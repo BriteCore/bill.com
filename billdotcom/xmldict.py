@@ -69,7 +69,7 @@ class XMLDict(collections.MutableMapping):
         elif type(value) == datetime.datetime:
             return value.strftime('%m/%d/%Y %H:%M:%S')
         else:
-            return escape(value)
+            return escape(str(value))
 
     @classmethod
     def parse(cls, dom):
