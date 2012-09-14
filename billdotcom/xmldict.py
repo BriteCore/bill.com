@@ -50,7 +50,7 @@ class XMLDict(collections.MutableMapping):
         return iter(self.__payload)
 
     def __len__(self):
-        return len(self.store)
+        return len(self.__payload)
 
     def __keytransform__(self, key):
         return str(key)
