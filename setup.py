@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name='billdotcom',
-    version='0.0.1',
+    version='0.1.0',
     author='Amanda Quint, Matthew Thompson',
     author_email='amanda@britecore.com, matt@britecore.com',
     packages=['billdotcom'],

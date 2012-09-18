@@ -7,6 +7,7 @@ visit the `Bill.com developer page <http://www.bill.com/resources/developer-prog
 """
 
 from bill import Bill, BillLineItem
+from chartofaccount import ChartOfAccount
 from config import get_logger, CONFIG, validate_config
 from dtd import DTD
 from exceptions import BilldotcomError, ConfigurationError, HTTPError, ServerResponseError
@@ -20,6 +21,7 @@ __all__ = [
         Bill,
         BillLineItem,
         BilldotcomError,
+        ChartOfAccount,
         CONFIG,
         ConfigurationError,
         DTD,
