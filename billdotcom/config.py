@@ -21,9 +21,9 @@ import logging.handlers
 import os
 import ConfigParser
 
-from exceptions import ConfigurationError
+from .exceptions import ConfigurationError
 
-API_URL = 'https://api.bill.com/crudApi'
+API_URL = 'https://api.bill.com/api/v2'
 
 ROOT = os.environ.get('BILLDOTCOM_PREFIX', os.getcwd())
 

@@ -3,21 +3,19 @@
    :synopsis: A model for the Bill object.
 """
 
-from xmldict import XMLDict
+from jsondict import JSONDict
 
-class Bill(XMLDict):
+class Bill(JSONDict):
     """This models the Bill object.
 
     Required:
         ============= ========== ===============================================
         *Argument*               *Description*
         ------------------------ -----------------------------------------------
-        externalId    (str):     The developer-created ID from your system.
         invoiceNumber (str):     The invoice number or identifier.
         vendorId      (str):     The ID of the vendor that is creating the bill.
         invoiceDate   (date):    The date that the invoice was billed on.
         dueDate       (date):    The date that the invoice must be paid by.
-        amount        (Decimal): The amount of money that is billed.
         ============= ========== ===============================================
 
     Creation:
@@ -26,21 +24,20 @@ class Bill(XMLDict):
 
             >>> with Session() as s:
             >>>     a = Bill(
-            >>>         externalId = '123456',
             >>>         vendorId = 'abc123',
             >>>         invoiceNumber = 'BC1234',
             >>>         invoiceDate = date(2012,10,1),
             >>>         dueDate = date(2012,11,1),
             >>>         amount = 25.0
             >>>     )
-            >>>     a['id'] = s.create_bill(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         Download a list of Bill objects from the server with the Session.
         For example:
 
             >>> with Session() as s:
-            >>>     print [x['id'] for x in s.get_list('bill')]
+            >>>     print [x['id'] for x in s.list('Bill')]
     """
 
     def __init__(self, ignore_required=False, **kwargs):
@@ -57,7 +54,7 @@ class Bill(XMLDict):
         if ignore_required == True:
             required = ()
 
-        super(Bill, self).__init__('bill', required, **kwargs)
+        super(Bill, self).__init__('Bill', required, **kwargs)
 
         self.nested_map = {
             'billLineItems': BillLineItem
@@ -68,7 +65,7 @@ class Bill(XMLDict):
         self.nested_object['billLineItems'].append(line_item)
 
 
-class BillLineItem(XMLDict):
+class BillLineItem(JSONDict):
     """This models the BillLineItem object. It allows you to further describe a Bill,
     assigning amounts among individual line items.
 
@@ -76,7 +73,6 @@ class BillLineItem(XMLDict):
         ============= ========== =====================================================
         *Argument*               *Description*
         ------------------------ -----------------------------------------------------
-        amount        (Decimal)  The amount of money that is billed on this line item.
         ============= ========== =====================================================
 
     Creation:
@@ -84,7 +80,6 @@ class BillLineItem(XMLDict):
 
             >>> with Session() as s:
             >>>     a = Bill(
-            >>>         externalId = '123456',
             >>>         vendorId = 'abc123',
             >>>         invoiceNumber = 'BC1234',
             >>>         invoiceDate = date(2012,10,1),
@@ -93,19 +88,17 @@ class BillLineItem(XMLDict):
             >>>     )
             >>>     a.add_line_item(BillLineItem(amount=2, description="eggs"))
             >>>     a.add_line_item(BillLineItem(amount=3, description="bacon"))
-            >>>     a['id'] = s.create_bill(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         See the :class:`billdotcom.bill.Bill` class for how you can retrieve bills.
     """
 
     def __init__(self, ignore_required=False, **kwargs):
-        required = (
-            'amount',
-        )
+        required = ()
 
         if ignore_required == True:
             required = ()
 
-        super(BillLineItem, self).__init__('billLineItem', required, **kwargs)
+        super(BillLineItem, self).__init__('BillLineItem', required, **kwargs)
 

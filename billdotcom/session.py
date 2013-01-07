@@ -4,18 +4,17 @@
 """
 
 import iso8601
-import uuid
-from bill import Bill
-from chartofaccount import ChartOfAccount
-from customer import Customer
-from invoice import Invoice
-from item import Item
-from vendor import Vendor
-from vendorcredit import VendorCredit
-from config import CONFIG, get_logger
-from https import https_post, https_post_operation
-from exceptions import BilldotcomError, ServerResponseError
-from xmldict import XMLDict
+from .bill import Bill
+from .chartofaccount import ChartOfAccount
+from .customer import Customer
+from .invoice import Invoice
+from .item import Item
+from .vendor import Vendor
+from .vendorcredit import VendorCredit
+from .config import CONFIG
+from .https import https_post
+from .exceptions import BilldotcomError
+import copy
 
 class Session(object):
     """This models and handles serialization of the Bill object.
@@ -29,26 +28,23 @@ class Session(object):
         >>>     # do stuff
     """
 
-    def __init__(self):
-        self.session_id = None
+    def __init__(self, session_id=None):
+        self.session_id = session_id
         self.appkey = CONFIG.get('authentication', 'appkey')
 
-    def __build_request__(self, content, **kwargs):
-        data = {
-            'appkey': self.appkey,
-            'sessionId': self.session_id,
-            'content': content,
-        }
+    def post(self, url, data={}, **kwargs):
+        if not self.session_id:
+            raise BilldotcomError("cannot send POST request without logging in first")
 
-        data.update(kwargs)
+        params = dict(
+            devKey = self.appkey,
+            sessionId = self.session_id
+        )
 
-        xmlstring = """
-        <request version="1.0" applicationkey="{{appkey}}">
-            {0}
-        </request>
-        """.format(content).format(**data)
+        payload = copy.deepcopy(data)
+        payload.update(kwargs)
 
-        return xmlstring
+        return https_post(url, payload, params=params)
 
     def getcurrenttime(self):
         """Gets Bill.com's system time.
@@ -56,330 +52,95 @@ class Session(object):
         Returns:
             datetime. System time as reported by Bill.com
         """
-        xmlstring = self.__build_request__("""
-            <getcurrenttime sessionId="{sessionId}">
-            </getcurrenttime>
-        """)
+        response = self.post('CurrentTime.json')
+        return iso8601.parse_date(response['currentTime'])
 
-        response = https_post(xmlstring)
-        thetime = response.getElementsByTagName('currentTime')[0].firstChild.data
-        return iso8601.parse_date(thetime)
-
-    def __get_result_or_fail(self, operationresults, transaction):
-        LOG = get_logger()
-        transaction = str(transaction)
-        try:
-            return operationresults['OK'][transaction]
-        except (AttributeError, KeyError):
-            message = operationresults['failed'][transaction]['message']
-            LOG.error(message)
-            raise ServerResponseError(message)
-
-    def __request(self, name, payload):
-        transaction = uuid.uuid4()
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <{name}>
-                    {payload}
-                </{name}>
-            </operation>
-        """, name=name, payload=payload, transaction=transaction)
-
-        response = https_post_operation(xmlstring)
-        return self.__get_result_or_fail(response, transaction)
-
-    def custom_request(self, name, **kwargs):
-        """Construct and send a custom request.
+    def create(self, bdc_object):
+        """Creates a Billdotcom object on the server.
 
         Args:
-            name: The name of the operation. For instance, 'send_vendor_invite'.
-            kwargs: Key values of data to send in the payload.
+            bdc_object: A Billdotcom object with the required fields filled in.
 
         Returns:
-            XML dom response.
-
-        Raises:
-            ServerReponseError
-        """
-
-        payload = [
-            '<{0}>{1}</{0}>'.format(key, XMLDict.valuetransform(value))
-            for key, value in kwargs.items()
-        ]
-
-        return self.__request(name, payload)
-
-    def create_bill(self, bill):
-        """Creates a Bill object on the server.
-
-        Args:
-            bill: A Bill object with the required fields filled in.
-
-        Returns:
-            The newly created Bill's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('create_bill', bill.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def create_chartofaccount(self, chartOfAccount):
-        """Creates a Chart of Account object on the server.
-
-        Args:
-            chartOfAccount: A Chart of Account object with the required fields filled in.
-
-        Returns:
-            The newly created created Chart of Account's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('create_chartofaccount', chartOfAccount.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-
-    def create_customer(self, customer):
-        """Creates a Customer object on the server.
-
-        Args:
-            customer: A Customer object with the required fields filled in.
-
-        Returns:
-            The newly created created Customer's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('create_customer', customer.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def update_customer(self, customer):
-        """Updates a Customer object on the server. Update with 'isActive'=2 to deactivate it.
-
-        Args:
-            customer: A Customer object with the required fields filled in.
-
-        Returns:
-            The updated Customer's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('update_customer', customer.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def create_invoice(self, invoice):
-        """Creates a Invoice object on the server.
-
-        Args:
-            invoice: An Invoice object with the required fields filled in.
-
-        Returns:
-            The newly created Invoice's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('create_invoice', invoice.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def create_item(self, item):
-        """Creates an Item object on the server.
-
-        Args:
-            item: An Item object with the required fields filled in.
-
-        Returns:
-            The newly created created Item's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('create_item', item.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def create_vendor(self, vendor):
-        """Creates a Vendor object on the server.
-
-        Args:
-            vendor: A Vendor object with the required fields filled in.
-
-        Returns:
-            The newly created Vendor's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('create_vendor', vendor.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def update_vendor(self, vendor):
-        """Updates a Vendor object on the server. Update with 'isActive'=2 to deactivate it.
-
-        Args:
-            vendor: A Vendor object with the required fields filled in.
-
-        Returns:
-            The updated Vendor's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('update_vendor', vendor.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def send_vendor_invite(self, vendorId, email):
-        """Updates a Vendor object on the server. Update with 'isActive'=2 to deactivate it.
-
-        Args:
-            vendor: A Vendor object with the required fields filled in.
-
-        Returns:
-            The DOM from the request.
+            The newly created Object's ID.
 
         Raises:
             ServerResponseError
         """
 
-        return self.custom_request('send_vendor_invite', vendorId=vendorId, email=email)
+        url = bdc_object.url
+        data = dict(
+            obj = bdc_object.data
+        )
 
-    def create_vendorcredit(self, vendorCredit):
-        """Creates a Vendor Credit object on the server.
+        response = self.post('Crud/Create/' + url, data)
+        return response['id']
 
-        Args:
-            vendorCredit: A Vendor Credit object with the required fields filled in.
-
-        Returns:
-            The newly created Vendor Credit's ID.
-
-        Raises:
-            ServerResponseError
-        """
-        result = self.__request('create_vendorcredit', vendorCredit.xml())
-        return result.getElementsByTagName('id')[0].firstChild.data
-
-    def set_external_id(self, id, externalId):
-        """Sets the external id for an object on Bill.com's side.
-
-        Args:
-            id: The id of the object on Bill.com's side.
-            externalId: The custom id to set.
-
-        Returns:
-            The DOM from the request.
-
-        Raises:
-            ServerResponseError
-        """
-        return self.custom_request('set_external_id', id=id, externalId=externalId)
-
-
-    def get_list(self, object_name, filters=[], **kwargs):
-        """Gets data back from the server. Filters can be used to select specific objects by fields.
+    def list(self, bdc_type, sort=[], filters=[], start=0, max=999):
+        """Lists Billdotcom objects on the server, with optional filters.
         The objects will be transformed into the corresponding classes and returned.
 
         Args:
-            object_name: The type of object to list. Supported object types and their mappings:
-                * "bill" for Bill objects
-                * "chartofaccount" for ChartOfAccount objects
-                * "customer" for Customer objects
-                * "invoice" for Invoice objects
-                * "item" for Item objects
-                * "vendor" for Vendor objects
-                * "vendorcredit" for VendorCredit objects
+            bdc_type: A Billdotcom object type. Supported objects are:
+                * Vendor
+
+            sort: A list of tuples representing sort order. Use 'asc' for ascending and
+                'desc' for descending. For example:
+                 >>> with Session() as s:
+                 >>>     s.list('Vendor', sort=[('createdTime', 'desc')])
+
             filters: A list of tuples representing filters to query with. Supported operators are:
-                    =, <, >, !=, <=, >=, IN
+                    =, <, >, !=, <=, >=, in, nin
                 These operators can be used with any field in the model you are querying, as long
-                as it has a data type of ID, date, Enum, IntegrationId, or ExternalId. Notice
-                that String is **not** included!  See the official Bill.com documentation for more.
-                An example of using a filter:
+                as it has a data type of ID, Date, DateTime, or Enum. See the official Bill.com
+                documentation for more on this. An example of using a filter:
                     >>> with Session() as s:
                     >>>     s.get_list('bill', filters=[('invoiceDate', '<', date.today())])
 
-            kwargs: You can also specify filters are simple kwargs. For example:
-                >>> with Session() as s:
-                >>>     s.get_list('bill', id='testID')
+            start: Start index for paging. Default 0.
+
+            max: Maximum records returned. Default 999 (server maximum).
 
         Returns:
-            A list of object classes, such as a list of :class:`billdotcom.bill.Bill`s.
+            List of objects from the server.
 
         Raises:
-            ServerResponseError
+            BilldotcomError, ServerResponseError
         """
 
-        object_mapper = {
-            "bill": Bill,
-            "chartofaccount": ChartOfAccount,
-            "customer": Customer,
-            "invoice": Invoice,
-            "item": Item,
-            "vendor": Vendor,
-            "vendorcredit": VendorCredit,
+        type_map = {
+            'Bill': Bill,
+            'ChartOfAccount': ChartOfAccount,
+            'Customer': Customer,
+            'Invoice': Invoice,
+            'Item': Item,
+            'Vendor': Vendor,
+            'VendorCredit': VendorCredit
         }
 
-        # some stuff doesn't work right unless it's the right case...
-        name_mapper = {
-            "vendorcredit": "vendorCredit",
-            "chartofaccount": "chartOfAccount"
-        }
+        if bdc_type not in type_map:
+            raise BilldotcomError('object type {} is not supported'.format(bdc_type))
 
-        if object_name not in object_mapper:
-            raise ValueError("{0} is not a supported object type".format(object_name))
+        data = dict(
+            start = start,
+            max = max
+        )
 
-        transaction = uuid.uuid4()
+        if sort:
+            data['sort'] = [
+                dict(field=name, asc=(order=='asc'))
+                for name, order in sort
+            ]
 
+        if filters:
+            data['filters']  = [
+                dict(field=field, op=op, value=value)
+                for field, op, value in filters
+            ]
 
-        def filter_to_xml(name, op, value):
-            valid_ops = ('=', '<', '>', '!=', '<=', '>=', 'IN')
-            if op not in valid_ops:
-                raise ValueError('filter operator {0} is not supported'.format(op))
+        response = self.post('List/{}.json'.format(bdc_type), data)
 
-            op = op.replace('>', '&gt;').replace('<', '&lt;')
-
-            value = XMLDict.valuetransform(value)
-
-            return '''
-                <expression>
-                    <field>{0}</field>
-                    <operator>{1}</operator>
-                    <value>{2}</value>
-                </expression>'''.format(name, op, value)
-
-
-        filter_xml = []
-        for name, op, value in filters:
-            filter_xml.append(filter_to_xml(name, op, value))
-
-        for key, value in kwargs.items():
-            filter_xml.append(filter_to_xml(key, '=', value))
-
-        if filter_xml:
-            filter_xml = '''
-                <filter>
-                    {0}
-                </filter>'''.format('\n'.join(filter_xml))
-        else:
-            filter_xml = ''
-
-        xmlstring = self.__build_request__("""
-            <operation transactionId="{transaction}" sessionId="{sessionId}">
-                <get_list object="{object_name}">
-                    {filter_xml}
-                </get_list>
-            </operation>
-        """, object_name=object_name, transaction=transaction, filter_xml=filter_xml)
-
-        response = https_post_operation(xmlstring)
-        result = self.__get_result_or_fail(response, transaction)
-
-        constructor = object_mapper[object_name]
-        root_name = name_mapper.get(object_name, object_name)
-
-        object_data = [constructor.parse(x) for x in result.getElementsByTagName(root_name)]
-        return object_data
+        return [type_map[row['entity']](**row) for row in response]
 
     def __enter__(self):
         self.login()
@@ -392,23 +153,16 @@ class Session(object):
         """Initiate a session on the server."""
 
         data = {
-            'appkey': self.appkey,
-            'email': CONFIG.get('authentication', 'email'),
+            'devKey': self.appkey,
+            'userName': CONFIG.get('authentication', 'email'),
             'password': CONFIG.get('authentication', 'password'),
             'orgId': CONFIG.get('organization', 'id'),
         }
 
-        xmlstring = self.__build_request__("""
-            <login>
-                <username>{email}</username>
-                <password>{password}</password>
-                <orgID>{orgId}</orgID>
-            </login>
-        """, **data)
+        # the server won't take these in the POST data...
+        response = https_post('Login.json', None, params=data)
 
-        response = https_post(xmlstring)
-
-        self.session_id = response.getElementsByTagName('sessionId')[0].firstChild.data
+        self.session_id = response['sessionId']
 
     def logout(self):
         """Shut down a session on the server."""
@@ -416,12 +170,6 @@ class Session(object):
         if not self.session_id:
             raise BilldotcomError("cannot logout on a session that has not logged in")
 
-
-        xmlstring = self.__build_request__("""
-            <logout sessionId="{sessionId}">
-            </logout>
-        """)
-
-        https_post(xmlstring)
+        self.post('Logout.json')
         self.session_id = None
 
