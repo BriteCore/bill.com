@@ -13,7 +13,7 @@ from .vendor import Vendor
 from .vendorcredit import VendorCredit
 from .config import CONFIG
 from .https import https_post
-from .exceptions import BilldotcomError
+from .exceptions import BilldotcomError, ServerResponseError
 import copy
 
 class Session(object):
@@ -27,6 +27,16 @@ class Session(object):
         >>> with Session():
         >>>     # do stuff
     """
+
+    type_map = {
+        'Bill': Bill,
+        'ChartOfAccount': ChartOfAccount,
+        'Customer': Customer,
+        'Invoice': Invoice,
+        'Item': Item,
+        'Vendor': Vendor,
+        'VendorCredit': VendorCredit
+    }
 
     def __init__(self, session_id=None):
         self.session_id = session_id
@@ -76,13 +86,102 @@ class Session(object):
         response = self.post('Crud/Create/' + url, data)
         return response['id']
 
+    def read(self, bdc_type, id):
+        """Reads (gets) a Billdotcom object from the server.
+
+        Args:
+            bdc_type: A Billdotcom object type. Supported objects are:
+                * Bill
+                * ChartOfAccount
+                * Customer
+                * Invoice
+                * Item
+                * Vendor
+                * VendorCredit
+
+            id: the Id field of the object.
+
+        Returns:
+            The Billdotcom object or None.
+
+        Raises:
+            BilldotcomError
+        """
+
+        if bdc_type not in self.type_map:
+            raise BilldotcomError('object type {} is not supported'.format(bdc_type))
+
+        data = dict(
+            id = id
+        )
+
+        try:
+            response = self.post('Crud/Read/' + bdc_type + '.json', data)
+            return self.type_map[response['entity']](**response)
+        except ServerResponseError:
+            return None
+
+    def update(self, bdc_object):
+        """Updates a Billdotcom object on the server. The id field is required.
+
+        Args:
+            bdc_object: A Billdotcom object with the required fields filled in.
+
+        Raises:
+            BilldotcomError, ServerResponseError
+        """
+
+        if 'id' not in bdc_object:
+            raise BilldotcomError('the id field is required for updates')
+
+        url = bdc_object.url
+        data = dict(
+            obj = bdc_object.data
+        )
+
+        self.post('Crud/Update/' + url, data)
+
+    def delete(self, bdc_type, id):
+        """Deletes (deactivates) a Billdotcom object on the server.
+
+        Args:
+            bdc_type: A Billdotcom object type. Supported objects are:
+                * Bill
+                * ChartOfAccount
+                * Customer
+                * Invoice
+                * Item
+                * Vendor
+                * VendorCredit
+
+            id: the Id field of the object.
+
+        Raises:
+            BilldotcomError
+        """
+
+        if bdc_type not in self.type_map:
+            raise BilldotcomError('object type {} is not supported'.format(bdc_type))
+
+        data = dict(
+            id = id
+        )
+
+        self.post('Crud/Delete/' + bdc_type + '.json', data)
+
     def list(self, bdc_type, sort=[], filters=[], start=0, max=999):
         """Lists Billdotcom objects on the server, with optional filters.
         The objects will be transformed into the corresponding classes and returned.
 
         Args:
             bdc_type: A Billdotcom object type. Supported objects are:
+                * Bill
+                * ChartOfAccount
+                * Customer
+                * Invoice
+                * Item
                 * Vendor
+                * VendorCredit
 
             sort: A list of tuples representing sort order. Use 'asc' for ascending and
                 'desc' for descending. For example:
@@ -108,17 +207,7 @@ class Session(object):
             BilldotcomError, ServerResponseError
         """
 
-        type_map = {
-            'Bill': Bill,
-            'ChartOfAccount': ChartOfAccount,
-            'Customer': Customer,
-            'Invoice': Invoice,
-            'Item': Item,
-            'Vendor': Vendor,
-            'VendorCredit': VendorCredit
-        }
-
-        if bdc_type not in type_map:
+        if bdc_type not in self.type_map:
             raise BilldotcomError('object type {} is not supported'.format(bdc_type))
 
         data = dict(
@@ -140,7 +229,7 @@ class Session(object):
 
         response = self.post('List/{}.json'.format(bdc_type), data)
 
-        return [type_map[row['entity']](**row) for row in response]
+        return [self.type_map[row['entity']](**row) for row in response]
 
     def __enter__(self):
         self.login()

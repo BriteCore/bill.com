@@ -83,6 +83,9 @@ class JSONDict(collections.MutableMapping):
 
         obj = copy.deepcopy(self.__payload)
 
+        # filter out None valued keys
+        obj = { key: value for key, value in obj.items() if value }
+
         for name, children in self.nested_object.items():
             if name in obj:
                 raise BilldotcomError('nested object {} already exists in the {} properties'.format(name, self.url))
