@@ -6,7 +6,7 @@ def main():
     validate_config()
 
     with Session() as s:
-        accounts = s.get_list('chartofaccount')
+        accounts = s.list('ChartOfAccount', sort=[('accountNumber', 'asc')])
 
     title = 'Got {0} chart of accounts:'.format(len(accounts))
     print title
@@ -14,7 +14,7 @@ def main():
 
     print 'ID\t\t\tNumber\tName'
     print '-'*60
-    for account in sorted(accounts, key=lambda x: x['accountNumber']):
+    for account in accounts:
         print '{id}\t{accountNumber}\t{name}'.format(**account)
 
 

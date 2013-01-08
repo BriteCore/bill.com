@@ -3,9 +3,9 @@
    :synopsis: A model for the Item object.
 """
 
-from xmldict import XMLDict
+from .jsondict import JSONDict
 
-class Item(XMLDict):
+class Item(JSONDict):
     """This models the Item object. 
     Apparently Items are needed for invoices. Who knew?
 
@@ -27,14 +27,14 @@ class Item(XMLDict):
             >>> with Session() as s:
             >>>     a = Item(name="Test Item",
             >>>              type=1)
-            >>>     a['id'] = s.create_item(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         Download a list of Vendor objects from the server with the Session.
         For example:
 
             >>> with Session() as s:
-            >>>     print [x['id'] for x in s.get_list('item')]
+            >>>     print [x['id'] for x in s.list('item')]
     """
 
     def __init__(self, ignore_required=False, **kwargs):
@@ -46,5 +46,5 @@ class Item(XMLDict):
         if ignore_required == True:
             required = ()
 
-        super(Item, self).__init__('item', required, **kwargs)
+        super(Item, self).__init__('Item', required, **kwargs)
 

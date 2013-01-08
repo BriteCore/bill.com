@@ -3,9 +3,9 @@
    :synopsis: A model for the Vendor Credit object.
 """
 
-from xmldict import XMLDict
+from .jsondict import JSONDict
 
-class VendorCredit(XMLDict):
+class VendorCredit(JSONDict):
     """This models the VendorCredit object.
 
     Required:
@@ -33,14 +33,14 @@ class VendorCredit(XMLDict):
             >>>                 dueDate = date(2012,11,1),
             >>>                 amount = 25.0
             >>>         )
-            >>>     a['id'] = s.create_vendorcredit(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         Download a list of Bill objects from the server with the Session.
         For example:
 
             >>> with Session() as s:
-            >>>     print [x['id'] for x in s.get_list('vendorcredit')]
+            >>>     print [x['id'] for x in s.list('vendorcredit')]
     """
 
     def __init__(self, ignore_required=False, **kwargs):
@@ -56,18 +56,20 @@ class VendorCredit(XMLDict):
         if ignore_required == True:
             required = ()
 
-        super(VendorCredit, self).__init__('vendorCredit', required, **kwargs)
+        super(VendorCredit, self).__init__('VendorCredit', required, **kwargs)
 
         self.nested_map = {
             'vendorCreditLineItems': VendorCreditLineItem
         }
+
+        self.convert_nested()
 
     def add_line_item(self, line_item):
         self.nested_object.setdefault('vendorCreditLineItems', [])
         self.nested_object['vendorCreditLineItems'].append(line_item)
 
 
-class VendorCreditLineItem(XMLDict):
+class VendorCreditLineItem(JSONDict):
     """This models the VendorCreditLineItem object. It allows you to further describe a VendorCredit,
     assigning amounts among individual line items.
 
@@ -92,7 +94,7 @@ class VendorCreditLineItem(XMLDict):
             >>>     )
             >>>     a.add_line_item(VendorCreditLineItem(amount=2, description="eggs"))
             >>>     a.add_line_item(VendorCreditLineItem(amount=3, description="bacon"))
-            >>>     a['id'] = s.create_vendor credit(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         See the :class:`billdotcom.vendorcredit.VendorCredit` class for how you can retrieve vendor credits.
@@ -106,5 +108,5 @@ class VendorCreditLineItem(XMLDict):
         if ignore_required == True:
             required = ()
 
-        super(VendorCreditLineItem, self).__init__('vendorCreditLineItem', required, **kwargs)
+        super(VendorCreditLineItem, self).__init__('VendorCreditLineItem', required, **kwargs)
 

@@ -3,16 +3,15 @@
    :synopsis: A model for the invoice object.
 """
 
-from xmldict import XMLDict
+from .jsondict import JSONDict
 
-class Invoice(XMLDict):
+class Invoice(JSONDict):
     """This models the Invoice object.
 
     Required:
         ================ ========== ===============================================
         *Argument*                  *Description*
         --------------------------- -----------------------------------------------
-        externalId       (str):     The developer-created ID from your system.
         invoiceNumber    (str):     The invoice number or identifier.
         customerId       (str):     The ID of the customer attached to the invoice.
         invoiceDate      (date):    The date that the invoice was billed on.
@@ -27,20 +26,19 @@ class Invoice(XMLDict):
 
             >>> with Session() as s:
             >>>     a = Invoice(
-            >>>         externalId = '123456',
             >>>         customerId= 'abc123',
             >>>         invoiceNumber = 'BC1234',
             >>>         invoiceDate = date(2012,10,1),
             >>>         dueDate = date(2012,11,1),
             >>>     )
-            >>>     a['id'] = s.create_invoice(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         Download a list of Invoice objects from the server with the Session.
         For example:
 
             >>> with Session() as s:
-            >>>     print [x['id'] for x in s.get_list('invoice')]
+            >>>     print [x['id'] for x in s.list('invoice')]
     """
 
     def __init__(self, ignore_required=False, **kwargs):
@@ -49,24 +47,24 @@ class Invoice(XMLDict):
             'invoiceNumber',
             'invoiceDate',
             'dueDate',
-            'externalId',
         )
 
         if ignore_required == True:
             required = ()
 
-        super(Invoice, self).__init__('invoice', required, **kwargs)
+        super(Invoice, self).__init__('Invoice', required, **kwargs)
 
         self.nested_map = {
             'invoiceLineItems': InvoiceLineItem
         }
+        self.convert_nested()
 
     def add_line_item(self, line_item):
         self.nested_object.setdefault('invoiceLineItems', [])
         self.nested_object['invoiceLineItems'].append(line_item)
 
 
-class InvoiceLineItem(XMLDict):
+class InvoiceLineItem(JSONDict):
     """This models the InvoiceLineItem object. It allows you to further describe an Invoice,
     assigning amounts among individual line items.
 
@@ -74,9 +72,6 @@ class InvoiceLineItem(XMLDict):
         ============= ========== =====================================================
         *Argument*               *Description*
         ------------------------ -----------------------------------------------------
-        amount        (Decimal)  The amount of money that is billed on this line item.
-        price         (Decimal)  Who knows?
-        ratePercent   (Decimal)  The percentage of the rate
         ============= ========== =====================================================
 
     Creation:
@@ -93,7 +88,7 @@ class InvoiceLineItem(XMLDict):
             >>>     )
             >>>     a.add_line_item(InvoiceLineItem(amount=2, description="eggs"))
             >>>     a.add_line_item(InvoiceLineItem(amount=3, description="bacon"))
-            >>>     a['id'] = s.create_invoice(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         See the :class:`billdotcom.bill.Invoice` class for how you can retrieve invoices.
@@ -101,11 +96,12 @@ class InvoiceLineItem(XMLDict):
 
     def __init__(self, ignore_required=False, **kwargs):
         required = (
-            'amount',
+            'itemId',
+            'quantity'
         )
 
         if ignore_required == True:
             required = ()
 
-        super(InvoiceLineItem, self).__init__('invoiceLineItem', required, **kwargs)
+        super(InvoiceLineItem, self).__init__('InvoiceLineItem', required, **kwargs)
 

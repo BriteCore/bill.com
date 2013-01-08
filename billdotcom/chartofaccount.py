@@ -3,9 +3,9 @@
    :synopsis: A model for the Chart of Account object.
 """
 
-from xmldict import XMLDict
+from .jsondict import JSONDict
 
-class ChartOfAccount(XMLDict):
+class ChartOfAccount(JSONDict):
     """This models the Chart of Account object. This is a mapping
     of the account type.
 
@@ -51,14 +51,14 @@ class ChartOfAccount(XMLDict):
             >>>     a = ChartOfAccount(name="My Credit Card", 
                     >>>                accountType=5,
                     >>>                )
-            >>>     a['id'] = s.create_chartofaccount(a)
+            >>>     a['id'] = s.create(a)
 
     Retrieval:
         Download a list of Chart of Account objects from the server with the Session.
         For example:
 
             >>> with Session() as s:
-            >>>     print [x['id'] for x in s.get_list('chartofaccount')]
+            >>>     print [x['id'] for x in s.list('ChartOfAccount')]
     """
 
     def __init__(self, ignore_required=False, **kwargs):
@@ -70,5 +70,5 @@ class ChartOfAccount(XMLDict):
         if ignore_required == True:
             required = ()
 
-        super(ChartOfAccount, self).__init__('chartOfAccount', required, **kwargs)
+        super(ChartOfAccount, self).__init__('ChartOfAccount', required, **kwargs)
 
