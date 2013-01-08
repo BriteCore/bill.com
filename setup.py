@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name='billdotcom',
-    version='0.1.2',
+    version='0.2.1',
     author='Amanda Quint, Matthew Thompson',
     author_email='amanda@britecore.com, matt@britecore.com',
     packages=['billdotcom'],
@@ -11,7 +11,6 @@ setup(
         'bin/billdotcom_getorglist.py',
         'bin/billdotcom_getchartofaccounts.py',
         'bin/billdotcom_send_vendor_invite.py',
-        'bin/billdotcom_set_external_id.py'
     ],
     url='https://github.com/IntuitiveWebSolutions/bill.com',
     license='LICENSE.txt',

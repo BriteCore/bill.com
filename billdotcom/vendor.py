@@ -3,9 +3,10 @@
    :synopsis: A model for the Vendor object.
 """
 
-from xmldict import XMLDict
+from .jsondict import JSONDict
 
-class Vendor(XMLDict):
+
+class Vendor(JSONDict):
     """This models the Vendor object. In Bill.com vendors are the targets 
     that payments are sent to.
 
@@ -22,26 +23,26 @@ class Vendor(XMLDict):
 
             >>> with Session() as s:
             >>>     a = Vendor(name="Test Vendor")
-            >>>     a['id'] = s.create_vendor(a)
+            >>>     a['id'] = s.create(a)
 
     Updates:
         It's easy to create and update your contacts and vendors.
         For example, to activate a given vendor:
-            >>> vendor = s.get_list('vendor', id='00901YYOFDJNAHP2xlg9')[0]
+            >>> vendor = s.get('Vendor', id='00901YYOFDJNAHP2xlg9')
             >>> vendor['isActive'] = 1
-            >>> s.update_vendor(vendor)
+            >>> s.update(vendor)
 
         If you want to deactivate all your vendors, you might try something like this:
-            >>> for vendor in s.get_list('vendor'):
+            >>> for vendor in s.list('Vendor'):
             >>>     vendor['isActive'] = 2
-            >>>     s.update_vendor(vendor)
+            >>>     s.update(vendor)
 
     Retrieval:
         Download a list of Vendor objects from the server with the Session.
         For example:
 
             >>> with Session() as s:
-            >>>     print s.get_list('vendor')
+            >>>     print s.list('Vendor')
     """
 
     def __init__(self, ignore_required=False, **kwargs):
@@ -52,5 +53,5 @@ class Vendor(XMLDict):
         if ignore_required == True:
             required = ()
 
-        super(Vendor, self).__init__('vendor', required, **kwargs)
+        super(Vendor, self).__init__('Vendor', required, **kwargs)
 

@@ -1,3 +1,5 @@
+v0.2.1, 2013-01-08 -- Adding read, delete, update functions.
+v0.2.0, 2013-01-07 -- Rewrite everything for the JSON api.
 v0.1.1, 2012-09-19 -- Add billdotcom_set_external_id.py to set external ids
 v0.1.0, 2012-09-18 -- Everything you probably need to get started.
 v0.0.1, 2012-08-04 -- Intial release.
