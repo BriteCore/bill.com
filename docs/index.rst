@@ -9,22 +9,11 @@ billdotcom
 .. toctree::
    :maxdepth: 2
 
-.. automodule:: billdotcom
 
+Configuration
+=============
 
-Bills and Payments
-==================
-
-.. automodule:: billdotcom.bill
-   :members:
-
-.. automodule:: billdotcom.vendorcredit
-   :members:
-
-Contacts and Vendors
-====================
-
-.. automodule:: billdotcom.vendor
+.. automodule:: billdotcom.config
    :members:
 
 
@@ -35,10 +24,29 @@ Sessions and Authentication
    :members:
 
 
-Configuration
-=============
+Bills and Payments
+==================
 
-.. automodule:: billdotcom.config
+.. automodule:: billdotcom.bill
+   :members:
+
+.. automodule:: billdotcom.invoice
+   :members:
+
+.. automodule:: billdotcom.vendorcredit
+   :members:
+
+.. automodule:: billdotcom.cartofaccount
+   :members:
+
+
+Contacts and Vendors
+====================
+
+.. automodule:: billdotcom.customer
+   :members:
+
+.. automodule:: billdotcom.vendor
    :members:
 
 
