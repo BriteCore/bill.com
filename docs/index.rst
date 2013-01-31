@@ -36,7 +36,7 @@ Bills and Payments
 .. automodule:: billdotcom.vendorcredit
    :members:
 
-.. automodule:: billdotcom.cartofaccount
+.. automodule:: billdotcom.chartofaccount
    :members:
 
 

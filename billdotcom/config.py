@@ -1,13 +1,15 @@
 """Global definitions, configuration and logging.
 
-The default configuration file must contain the following structure:
- * authorization
-    * appkey: the application key from Bill.com
-    * email: your user's email address
-    * password: your user's password
- * organization
-    * name: the name of your organization
-    * id: the id for your organization. Obtain with the `billdotcom_getorglist` script.
+The default configuration file (`billdotcom.cfg`) must contain the following:
+::
+
+    [authorization]
+    appkey = the application key from Bill.com
+    email = your user's email address
+    password = your user's password
+    [organization]
+    name = the name of your organization
+    id = the id for your organization. Obtain with the `billdotcom_getorglist` script.
 
 .. note::
     The environment variable BILLDOTCOM_PREFIX can be used to control the location of
