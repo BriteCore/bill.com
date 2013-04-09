@@ -248,8 +248,7 @@ class Session(object):
             'orgId': CONFIG.get('organization', 'id'),
         }
 
-        # the server won't take these in the POST data...
-        response = https_post('Login.json', None, params=data)
+        response = https_post('Login.json', data)
 
         self.session_id = response['sessionId']
 

@@ -7,6 +7,7 @@ import collections
 import copy
 import time
 import datetime
+import decimal
 from .exceptions import BilldotcomError
 
 
@@ -89,6 +90,8 @@ class JSONDict(collections.MutableMapping):
             if type(value) in (datetime.date, datetime.datetime):
                 # needs to be in iso8601
                 return '{:%Y-%m-%dT%H:%M:%S}{:+06.2f}'.format(value, time.timezone/3600.0)
+            if type(value) is decimal.Decimal:
+                return float(value)
             else:
                 return value
 

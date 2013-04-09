@@ -47,12 +47,14 @@ def https_post(url, payload, params={}, ignore_status=False):
 
     api_url = API_URL + '/' + url
 
-    # it seems that they only accept data over url parameters...
-    if payload:
-        params.update({'data': json.dumps(payload)})
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+
+    # format the payload unless we're logging in
+    if payload and 'password' not in payload:
+        payload = {'data': json.dumps(payload)}
 
     try:
-        response = requests.get(api_url, params=params)
+        response = requests.post(api_url, params=params, data=payload, headers=headers)
     except Exception as e:
         raise ServerResponseError('Could not post to {0}: {1}'.format(api_url, e))
 
