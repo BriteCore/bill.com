@@ -46,9 +46,6 @@ class Bill(JSONDict):
             'invoiceNumber',
             'invoiceDate',
             'dueDate',
-            'externalId',
-            'amount',
-            'vendorId',
         )
 
         if ignore_required == True:
