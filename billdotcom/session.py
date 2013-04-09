@@ -15,6 +15,7 @@ from .config import CONFIG
 from .https import https_post
 from .exceptions import BilldotcomError, ServerResponseError
 import copy
+import json
 
 class Session(object):
     """This models and handles serialization of the Bill object.
@@ -46,15 +47,17 @@ class Session(object):
         if not self.session_id:
             raise BilldotcomError("cannot send POST request without logging in first")
 
-        params = dict(
+        payload = dict(
             devKey = self.appkey,
             sessionId = self.session_id
         )
 
-        payload = copy.deepcopy(data)
-        payload.update(kwargs)
+        data = copy.deepcopy(data)
+        data.update(kwargs)
 
-        return https_post(url, payload, params=params)
+        payload['data'] = json.dumps(data)
+
+        return https_post(url, payload)
 
     def getcurrenttime(self):
         """Gets Bill.com's system time.

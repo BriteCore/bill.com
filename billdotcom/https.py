@@ -49,10 +49,6 @@ def https_post(url, payload, params={}, ignore_status=False):
 
     headers = {'content-type': 'application/x-www-form-urlencoded'}
 
-    # format the payload unless we're logging in
-    if payload and 'password' not in payload:
-        payload = {'data': json.dumps(payload)}
-
     try:
         response = requests.post(api_url, params=params, data=payload, headers=headers)
     except Exception as e:
