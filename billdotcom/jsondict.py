@@ -5,6 +5,8 @@
 
 import collections
 import copy
+import time
+import datetime
 from .exceptions import BilldotcomError
 
 
@@ -83,8 +85,15 @@ class JSONDict(collections.MutableMapping):
 
         obj = copy.deepcopy(self.__payload)
 
-        # filter out None valued keys
-        obj = { key: value for key, value in obj.items() if value }
+        def format_val(value):
+            if type(value) in (datetime.date, datetime.datetime):
+                # needs to be in iso8601
+                return '{:%Y-%m-%dT%H:%M:%S}{:+06.2f}'.format(value, time.timezone/3600.0)
+            else:
+                return value
+
+        # filter out None valued keys and format them
+        obj = { key: format_val(value) for key, value in obj.items() if value }
 
         for name, children in self.nested_object.items():
             if name in obj:
