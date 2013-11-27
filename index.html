@@ -1,0 +1,871 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>billdotcom &mdash; billdotcom 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="billdotcom 0.1.1 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">billdotcom 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="billdotcom">
+<h1>billdotcom<a class="headerlink" href="#billdotcom" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+</div>
+<div class="section" id="module-billdotcom.config">
+<span id="configuration"></span><h1>Configuration<a class="headerlink" href="#module-billdotcom.config" title="Permalink to this headline">¶</a></h1>
+<p>Global definitions, configuration and logging.</p>
+<p>The default configuration file (<cite>billdotcom.cfg</cite>) must contain the following:</p>
+<div class="highlight-python"><pre>[authorization]
+appkey = the application key from Bill.com
+email = your user's email address
+password = your user's password
+[organization]
+name = the name of your organization
+id = the id for your organization. Obtain with the `billdotcom_getorglist` script.</pre>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The environment variable BILLDOTCOM_PREFIX can be used to control the location of
+the config file and logging directory. If it does not exist the current directory
+will be used.</p>
+</div>
+<dl class="function">
+<dt id="billdotcom.config.get_logger">
+<tt class="descclassname">billdotcom.config.</tt><tt class="descname">get_logger</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/billdotcom/config.html#get_logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.config.get_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the global logger and configures it if needed.</p>
+<p>The default handlers will write DEBUG or higher to STDERR and log INFO or higher
+to the default log file. See <a class="reference internal" href="#module-billdotcom.config" title="billdotcom.config"><tt class="xref py py-mod docutils literal"><span class="pre">billdotcom.config</span></tt></a> for more about how to change this.</p>
+<dl class="docutils">
+<dt>Example usage:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">LOG</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">LOG</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;look, an error!&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Returns:</dt>
+<dd>Logger.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="billdotcom.config.validate_config">
+<tt class="descclassname">billdotcom.config.</tt><tt class="descname">validate_config</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/billdotcom/config.html#validate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.config.validate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure that the required sections exist in the config file.</p>
+<p>For proper configuration and more about the default location, see <a class="reference internal" href="#module-billdotcom.config" title="billdotcom.config"><tt class="xref py py-mod docutils literal"><span class="pre">billdotcom.config</span></tt></a>.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>ConfigurationError</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-billdotcom.session">
+<span id="sessions-and-authentication"></span><h1>Sessions and Authentication<a class="headerlink" href="#module-billdotcom.session" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-session"></span><dl class="class">
+<dt id="billdotcom.session.Session">
+<em class="property">class </em><tt class="descclassname">billdotcom.session.</tt><tt class="descname">Session</tt><big>(</big><em>session_id=None</em><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models and handles serialization of the Bill object.</p>
+<p>Your configuration should have the minimum requirements listed in <a class="reference internal" href="#module-billdotcom.config" title="billdotcom.config"><tt class="xref py py-mod docutils literal"><span class="pre">billdotcom.config</span></tt></a>.
+Sessions will time out after 35 minutes.</p>
+<p>You can use it in a with statement:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">():</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c"># do stuff</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="billdotcom.session.Session.create">
+<tt class="descname">create</tt><big>(</big><em>bdc_object</em><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Billdotcom object on the server.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>bdc_object: A Billdotcom object with the required fields filled in.</dd>
+<dt>Returns:</dt>
+<dd>The newly created Object&#8217;s ID.</dd>
+<dt>Raises:</dt>
+<dd>ServerResponseError</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="billdotcom.session.Session.delete">
+<tt class="descname">delete</tt><big>(</big><em>bdc_type</em>, <em>id</em><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes (deactivates) a Billdotcom object on the server.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>bdc_type: A Billdotcom object type. Supported objects are:</dt>
+<dd><ul class="first last simple">
+<li>Bill</li>
+<li>ChartOfAccount</li>
+<li>Customer</li>
+<li>Invoice</li>
+<li>Item</li>
+<li>Vendor</li>
+<li>VendorCredit</li>
+</ul>
+</dd>
+</dl>
+<p class="last">id: the Id field of the object.</p>
+</dd>
+<dt>Raises:</dt>
+<dd>BilldotcomError</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="billdotcom.session.Session.getcurrenttime">
+<tt class="descname">getcurrenttime</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.getcurrenttime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.getcurrenttime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets Bill.com&#8217;s system time.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>datetime. System time as reported by Bill.com</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="billdotcom.session.Session.list">
+<tt class="descname">list</tt><big>(</big><em>bdc_type</em>, <em>sort=</em><span class="optional">[</span><span class="optional">]</span>, <em>filters=</em><span class="optional">[</span><span class="optional">]</span>, <em>start=0</em>, <em>max=999</em><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists Billdotcom objects on the server, with optional filters.
+The objects will be transformed into the corresponding classes and returned.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>bdc_type: A Billdotcom object type. Supported objects are:</dt>
+<dd><ul class="first last simple">
+<li>Bill</li>
+<li>ChartOfAccount</li>
+<li>Customer</li>
+<li>Invoice</li>
+<li>Item</li>
+<li>Vendor</li>
+<li>VendorCredit</li>
+</ul>
+</dd>
+<dt>sort: A list of tuples representing sort order. Use &#8216;asc&#8217; for ascending and</dt>
+<dd><dl class="first last docutils">
+<dt>&#8216;desc&#8217; for descending. For example:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;Vendor&#39;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">[(</span><span class="s">&#39;createdTime&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">)])</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt>filters: A list of tuples representing filters to query with. Supported operators are:</dt>
+<dd><blockquote class="first">
+<div>=, &lt;, &gt;, !=, &lt;=, &gt;=, in, nin</div></blockquote>
+<p>These operators can be used with any field in the model you are querying, as long
+as it has a data type of ID, Date, DateTime, or Enum. See the official Bill.com
+documentation for more on this. An example of using a filter:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">s</span><span class="o">.</span><span class="n">get_list</span><span class="p">(</span><span class="s">&#39;bill&#39;</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="p">[(</span><span class="s">&#39;invoiceDate&#39;</span><span class="p">,</span> <span class="s">&#39;&lt;&#39;</span><span class="p">,</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">())])</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>start: Start index for paging. Default 0.</p>
+<p class="last">max: Maximum records returned. Default 999 (server maximum).</p>
+</dd>
+<dt>Returns:</dt>
+<dd>List of objects from the server.</dd>
+<dt>Raises:</dt>
+<dd>BilldotcomError, ServerResponseError</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="billdotcom.session.Session.login">
+<tt class="descname">login</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.login" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initiate a session on the server.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="billdotcom.session.Session.logout">
+<tt class="descname">logout</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shut down a session on the server.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="billdotcom.session.Session.read">
+<tt class="descname">read</tt><big>(</big><em>bdc_type</em>, <em>id</em><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads (gets) a Billdotcom object from the server.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first docutils">
+<dt>bdc_type: A Billdotcom object type. Supported objects are:</dt>
+<dd><ul class="first last simple">
+<li>Bill</li>
+<li>ChartOfAccount</li>
+<li>Customer</li>
+<li>Invoice</li>
+<li>Item</li>
+<li>Vendor</li>
+<li>VendorCredit</li>
+</ul>
+</dd>
+</dl>
+<p class="last">id: the Id field of the object.</p>
+</dd>
+<dt>Returns:</dt>
+<dd>The Billdotcom object or None.</dd>
+<dt>Raises:</dt>
+<dd>BilldotcomError</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="billdotcom.session.Session.update">
+<tt class="descname">update</tt><big>(</big><em>bdc_object</em><big>)</big><a class="reference internal" href="_modules/billdotcom/session.html#Session.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.session.Session.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates a Billdotcom object on the server. The id field is required.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>bdc_object: A Billdotcom object with the required fields filled in.</dd>
+<dt>Raises:</dt>
+<dd>BilldotcomError, ServerResponseError</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-billdotcom.bill">
+<span id="bills-and-payments"></span><h1>Bills and Payments<a class="headerlink" href="#module-billdotcom.bill" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-bill"></span><dl class="class">
+<dt id="billdotcom.bill.Bill">
+<em class="property">class </em><tt class="descclassname">billdotcom.bill.</tt><tt class="descname">Bill</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/bill.html#Bill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.bill.Bill" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the Bill object.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first last docutils">
+<colgroup>
+<col width="19%" />
+<col width="14%" />
+<col width="67%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>invoiceNumber</td>
+<td>(str):</td>
+<td>The invoice number or identifier.</td>
+</tr>
+<tr class="row-odd"><td>vendorId</td>
+<td>(str):</td>
+<td>The ID of the vendor that is creating the bill.</td>
+</tr>
+<tr class="row-even"><td>invoiceDate</td>
+<td>(date):</td>
+<td>The date that the invoice was billed on.</td>
+</tr>
+<tr class="row-odd"><td>dueDate</td>
+<td>(date):</td>
+<td>The date that the invoice must be paid by.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">Create a Bill object and create it on the server side with
+with <tt class="xref py py-func docutils literal"><span class="pre">billdotcom.session.Session.create_bill()</span></tt>. For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">Bill</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">vendorId</span> <span class="o">=</span> <span class="s">&#39;abc123&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceNumber</span> <span class="o">=</span> <span class="s">&#39;BC1234&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">dueDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">amount</span> <span class="o">=</span> <span class="mf">25.0</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd><p class="first">Download a list of Bill objects from the server with the Session.
+For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;Bill&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="billdotcom.bill.BillLineItem">
+<em class="property">class </em><tt class="descclassname">billdotcom.bill.</tt><tt class="descname">BillLineItem</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/bill.html#BillLineItem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.bill.BillLineItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the BillLineItem object. It allows you to further describe a Bill,
+assigning amounts among individual line items.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first last docutils">
+<colgroup>
+<col width="17%" />
+<col width="13%" />
+<col width="70%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">BillLineItems are created along with a Bill. For example</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">Bill</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">vendorId</span> <span class="o">=</span> <span class="s">&#39;abc123&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceNumber</span> <span class="o">=</span> <span class="s">&#39;BC1234&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">dueDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">amount</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="o">.</span><span class="n">add_line_item</span><span class="p">(</span><span class="n">BillLineItem</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s">&quot;eggs&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="o">.</span><span class="n">add_line_item</span><span class="p">(</span><span class="n">BillLineItem</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s">&quot;bacon&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd>See the <a class="reference internal" href="#billdotcom.bill.Bill" title="billdotcom.bill.Bill"><tt class="xref py py-class docutils literal"><span class="pre">billdotcom.bill.Bill</span></tt></a> class for how you can retrieve bills.</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-billdotcom.invoice"></span><span class="target" id="module-invoice"></span><dl class="class">
+<dt id="billdotcom.invoice.Invoice">
+<em class="property">class </em><tt class="descclassname">billdotcom.invoice.</tt><tt class="descname">Invoice</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/invoice.html#Invoice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.invoice.Invoice" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the Invoice object.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first docutils">
+<colgroup>
+<col width="22%" />
+<col width="14%" />
+<col width="64%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>invoiceNumber</td>
+<td>(str):</td>
+<td>The invoice number or identifier.</td>
+</tr>
+<tr class="row-odd"><td>customerId</td>
+<td>(str):</td>
+<td>The ID of the customer attached to the invoice.</td>
+</tr>
+<tr class="row-even"><td>invoiceDate</td>
+<td>(date):</td>
+<td>The date that the invoice was billed on.</td>
+</tr>
+<tr class="row-odd"><td>dueDate</td>
+<td>(date):</td>
+<td>The date that the invoice must be paid by.</td>
+</tr>
+</tbody>
+</table>
+<p class="last">In addition to the above fields, you will need to add invoiceLineItems.</p>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">Create a Invoice object and create it on the server side with
+with <tt class="xref py py-func docutils literal"><span class="pre">billdotcom.session.Session.create_invoice()</span></tt>. For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">Invoice</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">customerId</span><span class="o">=</span> <span class="s">&#39;abc123&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceNumber</span> <span class="o">=</span> <span class="s">&#39;BC1234&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">dueDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd><p class="first">Download a list of Invoice objects from the server with the Session.
+For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;invoice&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="billdotcom.invoice.InvoiceLineItem">
+<em class="property">class </em><tt class="descclassname">billdotcom.invoice.</tt><tt class="descname">InvoiceLineItem</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/invoice.html#InvoiceLineItem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.invoice.InvoiceLineItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the InvoiceLineItem object. It allows you to further describe an Invoice,
+assigning amounts among individual line items.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first last docutils">
+<colgroup>
+<col width="17%" />
+<col width="13%" />
+<col width="70%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">InvoiceLineItems are created along with an Invoice. For example</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">Invoice</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">externalId</span> <span class="o">=</span> <span class="s">&#39;123456&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">customerId</span> <span class="o">=</span> <span class="s">&#39;abc123&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceNumber</span> <span class="o">=</span> <span class="s">&#39;BC1234&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">dueDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">amount</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="o">.</span><span class="n">add_line_item</span><span class="p">(</span><span class="n">InvoiceLineItem</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s">&quot;eggs&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="o">.</span><span class="n">add_line_item</span><span class="p">(</span><span class="n">InvoiceLineItem</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s">&quot;bacon&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd>See the <tt class="xref py py-class docutils literal"><span class="pre">billdotcom.bill.Invoice</span></tt> class for how you can retrieve invoices.</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-billdotcom.vendorcredit"></span><span class="target" id="module-vendorcredit"></span><dl class="class">
+<dt id="billdotcom.vendorcredit.VendorCredit">
+<em class="property">class </em><tt class="descclassname">billdotcom.vendorcredit.</tt><tt class="descname">VendorCredit</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/vendorcredit.html#VendorCredit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.vendorcredit.VendorCredit" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the VendorCredit object.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first last docutils">
+<colgroup>
+<col width="18%" />
+<col width="14%" />
+<col width="68%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>vendorId</td>
+<td>(str):</td>
+<td>The ID of the vendor that is creating the credit.</td>
+</tr>
+<tr class="row-odd"><td>invoiceNumber</td>
+<td>(str):</td>
+<td>The invoice number or identifier.</td>
+</tr>
+<tr class="row-even"><td>invoiceDate</td>
+<td>(date):</td>
+<td>The date that the invoice was billed on.</td>
+</tr>
+<tr class="row-odd"><td>dueDate</td>
+<td>(date):</td>
+<td>The date that the invoice must be paid by.</td>
+</tr>
+<tr class="row-even"><td>externalId</td>
+<td>(str):</td>
+<td>The developer-created ID from your system.</td>
+</tr>
+<tr class="row-odd"><td>amount</td>
+<td>(Decimal):</td>
+<td>The amount of money that is billed.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">Create a Vendor Credit object and create it on the server side with
+with <tt class="xref py py-func docutils literal"><span class="pre">billdotcom.session.Session.create_vendorcredit()</span></tt>. For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">VendorCredit</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>                <span class="n">vendorId</span> <span class="o">=</span> <span class="s">&quot;VENDORID&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span>                <span class="n">externalId</span> <span class="o">=</span> <span class="s">&#39;123456&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                <span class="n">invoiceNumber</span> <span class="o">=</span> <span class="s">&#39;BC1234&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                <span class="n">invoiceDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>                <span class="n">dueDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>                <span class="n">amount</span> <span class="o">=</span> <span class="mf">25.0</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd><p class="first">Download a list of Bill objects from the server with the Session.
+For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;vendorcredit&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="billdotcom.vendorcredit.VendorCreditLineItem">
+<em class="property">class </em><tt class="descclassname">billdotcom.vendorcredit.</tt><tt class="descname">VendorCreditLineItem</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/vendorcredit.html#VendorCreditLineItem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.vendorcredit.VendorCreditLineItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the VendorCreditLineItem object. It allows you to further describe a VendorCredit,
+assigning amounts among individual line items.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first last docutils">
+<colgroup>
+<col width="15%" />
+<col width="12%" />
+<col width="73%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>amount</td>
+<td>(Decimal)</td>
+<td>The amount of money that is vendor credited on this line item.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">VendorCreditLineItems are created along with a VendorCredit. For example</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">VendorCredit</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">externalId</span> <span class="o">=</span> <span class="s">&#39;123456&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">vendorId</span> <span class="o">=</span> <span class="s">&#39;abc123&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceNumber</span> <span class="o">=</span> <span class="s">&#39;BC1234&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">invoiceDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">creditDate</span> <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">amount</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="o">.</span><span class="n">add_line_item</span><span class="p">(</span><span class="n">VendorCreditLineItem</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s">&quot;eggs&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="o">.</span><span class="n">add_line_item</span><span class="p">(</span><span class="n">VendorCreditLineItem</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s">&quot;bacon&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd>See the <a class="reference internal" href="#billdotcom.vendorcredit.VendorCredit" title="billdotcom.vendorcredit.VendorCredit"><tt class="xref py py-class docutils literal"><span class="pre">billdotcom.vendorcredit.VendorCredit</span></tt></a> class for how you can retrieve vendor credits.</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-billdotcom.chartofaccount"></span><dl class="class">
+<dt id="billdotcom.chartofaccount.ChartOfAccount">
+<em class="property">class </em><tt class="descclassname">billdotcom.chartofaccount.</tt><tt class="descname">ChartOfAccount</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/chartofaccount.html#ChartOfAccount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.chartofaccount.ChartOfAccount" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the Chart of Account object. This is a mapping
+of the account type.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><p class="first">name (str): The name of the account (i.e. Checking)
+accountType (enum): Type of Account (This is not required in the API, but fails if not passed)</p>
+<blockquote class="last">
+<div>Unspecified = 0
+Accounts Payable = 1
+Accounts Receivable = 2
+Bank = 3
+Cost of Goods Sold = 4
+Credit Card = 5
+Equity = 6
+Expenses = 7
+Fixed Assed = 8
+Income = 9
+Long Term Liability = 10
+Other Asset = 11
+Other Current Asset = 12
+Other Current Liability = 13
+Other Expense = 14
+Other Income = 15
+Non-Posting = 16</div></blockquote>
+</dd>
+<dt>Optional:</dt>
+<dd><p class="first">accountNumber (str): The account number
+description (str): Description of the accont
+parentChartOfAccountId (ChartOfAccountId): The parent chart of account
+integrationId (str): The ID of the record in an accounting system like QuickBooks.
+externalId (str): The external id of this account.
+createdTime (datetime): The create date.
+updatedTime (datetime): The last update date.
+lastSyncTime (SettableDateTime): The last time this object was synced.
+isActive (enum): Whether or not this chart of account is active.</p>
+<blockquote class="last">
+<div>1 = active
+2 = inactive</div></blockquote>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">Create a Chart of Account object and create it on the server side with
+with <tt class="xref py py-func docutils literal"><span class="pre">billdotcom.session.Session.create_chartofaccount()</span></tt>. For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">ChartOfAccount</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;My Credit Card&quot;</span><span class="p">,</span> 
+<span class="go">        &gt;&gt;&gt;                accountType=5,</span>
+<span class="go">        &gt;&gt;&gt;                )</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd><p class="first">Download a list of Chart of Account objects from the server with the Session.
+For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;ChartOfAccount&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-billdotcom.customer">
+<span id="contacts-and-vendors"></span><h1>Contacts and Vendors<a class="headerlink" href="#module-billdotcom.customer" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-customer"></span><dl class="class">
+<dt id="billdotcom.customer.Customer">
+<em class="property">class </em><tt class="descclassname">billdotcom.customer.</tt><tt class="descname">Customer</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/customer.html#Customer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.customer.Customer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the Customer object. In Bill.com customers are what
+payments are sent from.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first last docutils">
+<colgroup>
+<col width="12%" />
+<col width="15%" />
+<col width="74%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>name</td>
+<td>(str)</td>
+<td>The name of the customer</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">Create a Customer object and create it on the server side with
+with <tt class="xref py py-func docutils literal"><span class="pre">billdotcom.session.Session.create_customer()</span></tt>. For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">Customer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;John Doe&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Retrieval:</dt>
+<dd><p class="first">Download a list of Vendor objects from the server with the Session.
+For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;Customer&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-billdotcom.vendor"></span><span class="target" id="module-vendor"></span><dl class="class">
+<dt id="billdotcom.vendor.Vendor">
+<em class="property">class </em><tt class="descclassname">billdotcom.vendor.</tt><tt class="descname">Vendor</tt><big>(</big><em>ignore_required=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/billdotcom/vendor.html#Vendor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.vendor.Vendor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This models the Vendor object. In Bill.com vendors are the targets 
+that payments are sent to.</p>
+<dl class="docutils">
+<dt>Required:</dt>
+<dd><table border="1" class="first last docutils">
+<colgroup>
+<col width="13%" />
+<col width="16%" />
+<col width="72%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td colspan="2"><em>Argument</em></td>
+<td><em>Description</em></td>
+</tr>
+<tr class="row-even"><td>name</td>
+<td>(str)</td>
+<td>The name of the vendor</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Creation:</dt>
+<dd><p class="first">Create a Vendor object and create it on the server side with
+with <tt class="xref py py-func docutils literal"><span class="pre">billdotcom.session.Session.create_vendor()</span></tt>. For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">Vendor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;Test Vendor&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">a</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Updates:</dt>
+<dd><p class="first">It&#8217;s easy to create and update your contacts and vendors.
+For example, to activate a given vendor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">vendor</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Vendor&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s">&#39;00901YYOFDJNAHP2xlg9&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vendor</span><span class="p">[</span><span class="s">&#39;isActive&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">vendor</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="last docutils">
+<dt>If you want to deactivate all your vendors, you might try something like this:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">vendor</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;Vendor&#39;</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">vendor</span><span class="p">[</span><span class="s">&#39;isActive&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">s</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">vendor</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt>Retrieval:</dt>
+<dd><p class="first">Download a list of Vendor objects from the server with the Session.
+For example:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">print</span> <span class="n">s</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="s">&#39;Vendor&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-billdotcom.exceptions">
+<span id="exceptions"></span><h1>Exceptions<a class="headerlink" href="#module-billdotcom.exceptions" title="Permalink to this headline">¶</a></h1>
+<p>Exceptions are defined in billdotcom for ease of use.</p>
+<dl class="exception">
+<dt id="billdotcom.exceptions.BilldotcomError">
+<em class="property">exception </em><tt class="descclassname">billdotcom.exceptions.</tt><tt class="descname">BilldotcomError</tt><big>(</big><em>message</em><big>)</big><a class="reference internal" href="_modules/billdotcom/exceptions.html#BilldotcomError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.exceptions.BilldotcomError" title="Permalink to this definition">¶</a></dt>
+<dd><p>The base class for billdotcom exceptions.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="billdotcom.exceptions.ConfigurationError">
+<em class="property">exception </em><tt class="descclassname">billdotcom.exceptions.</tt><tt class="descname">ConfigurationError</tt><big>(</big><em>message</em><big>)</big><a class="reference internal" href="_modules/billdotcom/exceptions.html#ConfigurationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.exceptions.ConfigurationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An exception raised when the configuration is incorrect.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="billdotcom.exceptions.HTTPError">
+<em class="property">exception </em><tt class="descclassname">billdotcom.exceptions.</tt><tt class="descname">HTTPError</tt><big>(</big><em>message</em><big>)</big><a class="reference internal" href="_modules/billdotcom/exceptions.html#HTTPError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.exceptions.HTTPError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An exception raised when an HTTP request returns with a bad code.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="billdotcom.exceptions.ServerResponseError">
+<em class="property">exception </em><tt class="descclassname">billdotcom.exceptions.</tt><tt class="descname">ServerResponseError</tt><big>(</big><em>message</em><big>)</big><a class="reference internal" href="_modules/billdotcom/exceptions.html#ServerResponseError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#billdotcom.exceptions.ServerResponseError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An exception raised when the server reponds that a request failed.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">billdotcom</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-billdotcom.config">Configuration</a></li>
+<li><a class="reference internal" href="#module-billdotcom.session">Sessions and Authentication</a></li>
+<li><a class="reference internal" href="#module-billdotcom.bill">Bills and Payments</a></li>
+<li><a class="reference internal" href="#module-billdotcom.customer">Contacts and Vendors</a></li>
+<li><a class="reference internal" href="#module-billdotcom.exceptions">Exceptions</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">billdotcom 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Amanda Quint, Matthew Thompson.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>

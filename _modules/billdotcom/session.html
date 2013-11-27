@@ -1,0 +1,357 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>billdotcom.session &mdash; billdotcom 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="billdotcom 0.1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">billdotcom 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for billdotcom.session</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: session</span>
+<span class="sd">   :synopsis: Session management (login, logout, etc).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">iso8601</span>
+<span class="kn">from</span> <span class="nn">.bill</span> <span class="kn">import</span> <span class="n">Bill</span>
+<span class="kn">from</span> <span class="nn">.chartofaccount</span> <span class="kn">import</span> <span class="n">ChartOfAccount</span>
+<span class="kn">from</span> <span class="nn">.customer</span> <span class="kn">import</span> <span class="n">Customer</span>
+<span class="kn">from</span> <span class="nn">.invoice</span> <span class="kn">import</span> <span class="n">Invoice</span>
+<span class="kn">from</span> <span class="nn">.item</span> <span class="kn">import</span> <span class="n">Item</span>
+<span class="kn">from</span> <span class="nn">.vendor</span> <span class="kn">import</span> <span class="n">Vendor</span>
+<span class="kn">from</span> <span class="nn">.vendorcredit</span> <span class="kn">import</span> <span class="n">VendorCredit</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">CONFIG</span>
+<span class="kn">from</span> <span class="nn">.https</span> <span class="kn">import</span> <span class="n">https_post</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">BilldotcomError</span><span class="p">,</span> <span class="n">ServerResponseError</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<div class="viewcode-block" id="Session"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session">[docs]</a><span class="k">class</span> <span class="nc">Session</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This models and handles serialization of the Bill object.</span>
+
+<span class="sd">    Your configuration should have the minimum requirements listed in :mod:`billdotcom.config`.</span>
+<span class="sd">    Sessions will time out after 35 minutes.</span>
+
+<span class="sd">    You can use it in a with statement:</span>
+
+<span class="sd">        &gt;&gt;&gt; with Session():</span>
+<span class="sd">        &gt;&gt;&gt;     # do stuff</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">type_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;Bill&#39;</span><span class="p">:</span> <span class="n">Bill</span><span class="p">,</span>
+        <span class="s">&#39;ChartOfAccount&#39;</span><span class="p">:</span> <span class="n">ChartOfAccount</span><span class="p">,</span>
+        <span class="s">&#39;Customer&#39;</span><span class="p">:</span> <span class="n">Customer</span><span class="p">,</span>
+        <span class="s">&#39;Invoice&#39;</span><span class="p">:</span> <span class="n">Invoice</span><span class="p">,</span>
+        <span class="s">&#39;Item&#39;</span><span class="p">:</span> <span class="n">Item</span><span class="p">,</span>
+        <span class="s">&#39;Vendor&#39;</span><span class="p">:</span> <span class="n">Vendor</span><span class="p">,</span>
+        <span class="s">&#39;VendorCredit&#39;</span><span class="p">:</span> <span class="n">VendorCredit</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_id</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span> <span class="o">=</span> <span class="n">session_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">appkey</span> <span class="o">=</span> <span class="n">CONFIG</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;authentication&#39;</span><span class="p">,</span> <span class="s">&#39;appkey&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BilldotcomError</span><span class="p">(</span><span class="s">&quot;cannot send POST request without logging in first&quot;</span><span class="p">)</span>
+
+        <span class="n">payload</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">devKey</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">appkey</span><span class="p">,</span>
+            <span class="n">sessionId</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span>
+        <span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">payload</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">https_post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Session.getcurrenttime"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.getcurrenttime">[docs]</a>    <span class="k">def</span> <span class="nf">getcurrenttime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets Bill.com&#39;s system time.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            datetime. System time as reported by Bill.com</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&#39;CurrentTime.json&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">iso8601</span><span class="o">.</span><span class="n">parse_date</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s">&#39;currentTime&#39;</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="Session.create"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.create">[docs]</a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdc_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a Billdotcom object on the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bdc_object: A Billdotcom object with the required fields filled in.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The newly created Object&#39;s ID.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ServerResponseError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="n">bdc_object</span><span class="o">.</span><span class="n">url</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">bdc_object</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">)</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&#39;Crud/Create/&#39;</span> <span class="o">+</span> <span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Session.read"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdc_type</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads (gets) a Billdotcom object from the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bdc_type: A Billdotcom object type. Supported objects are:</span>
+<span class="sd">                * Bill</span>
+<span class="sd">                * ChartOfAccount</span>
+<span class="sd">                * Customer</span>
+<span class="sd">                * Invoice</span>
+<span class="sd">                * Item</span>
+<span class="sd">                * Vendor</span>
+<span class="sd">                * VendorCredit</span>
+
+<span class="sd">            id: the Id field of the object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The Billdotcom object or None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            BilldotcomError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">bdc_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_map</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BilldotcomError</span><span class="p">(</span><span class="s">&#39;object type {} is not supported&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bdc_type</span><span class="p">))</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&#39;Crud/Read/&#39;</span> <span class="o">+</span> <span class="n">bdc_type</span> <span class="o">+</span> <span class="s">&#39;.json&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_map</span><span class="p">[</span><span class="n">response</span><span class="p">[</span><span class="s">&#39;entity&#39;</span><span class="p">]](</span><span class="o">**</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ServerResponseError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Session.update"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdc_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates a Billdotcom object on the server. The id field is required.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bdc_object: A Billdotcom object with the required fields filled in.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            BilldotcomError, ServerResponseError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="s">&#39;id&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bdc_object</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BilldotcomError</span><span class="p">(</span><span class="s">&#39;the id field is required for updates&#39;</span><span class="p">)</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="n">bdc_object</span><span class="o">.</span><span class="n">url</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">bdc_object</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&#39;Crud/Update/&#39;</span> <span class="o">+</span> <span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Session.delete"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdc_type</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes (deactivates) a Billdotcom object on the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bdc_type: A Billdotcom object type. Supported objects are:</span>
+<span class="sd">                * Bill</span>
+<span class="sd">                * ChartOfAccount</span>
+<span class="sd">                * Customer</span>
+<span class="sd">                * Invoice</span>
+<span class="sd">                * Item</span>
+<span class="sd">                * Vendor</span>
+<span class="sd">                * VendorCredit</span>
+
+<span class="sd">            id: the Id field of the object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            BilldotcomError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">bdc_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_map</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BilldotcomError</span><span class="p">(</span><span class="s">&#39;object type {} is not supported&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bdc_type</span><span class="p">))</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&#39;Crud/Delete/&#39;</span> <span class="o">+</span> <span class="n">bdc_type</span> <span class="o">+</span> <span class="s">&#39;.json&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Session.list"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdc_type</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">[],</span> <span class="n">filters</span><span class="o">=</span><span class="p">[],</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">999</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lists Billdotcom objects on the server, with optional filters.</span>
+<span class="sd">        The objects will be transformed into the corresponding classes and returned.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bdc_type: A Billdotcom object type. Supported objects are:</span>
+<span class="sd">                * Bill</span>
+<span class="sd">                * ChartOfAccount</span>
+<span class="sd">                * Customer</span>
+<span class="sd">                * Invoice</span>
+<span class="sd">                * Item</span>
+<span class="sd">                * Vendor</span>
+<span class="sd">                * VendorCredit</span>
+
+<span class="sd">            sort: A list of tuples representing sort order. Use &#39;asc&#39; for ascending and</span>
+<span class="sd">                &#39;desc&#39; for descending. For example:</span>
+<span class="sd">                 &gt;&gt;&gt; with Session() as s:</span>
+<span class="sd">                 &gt;&gt;&gt;     s.list(&#39;Vendor&#39;, sort=[(&#39;createdTime&#39;, &#39;desc&#39;)])</span>
+
+<span class="sd">            filters: A list of tuples representing filters to query with. Supported operators are:</span>
+<span class="sd">                    =, &lt;, &gt;, !=, &lt;=, &gt;=, in, nin</span>
+<span class="sd">                These operators can be used with any field in the model you are querying, as long</span>
+<span class="sd">                as it has a data type of ID, Date, DateTime, or Enum. See the official Bill.com</span>
+<span class="sd">                documentation for more on this. An example of using a filter:</span>
+<span class="sd">                    &gt;&gt;&gt; with Session() as s:</span>
+<span class="sd">                    &gt;&gt;&gt;     s.get_list(&#39;bill&#39;, filters=[(&#39;invoiceDate&#39;, &#39;&lt;&#39;, date.today())])</span>
+
+<span class="sd">            start: Start index for paging. Default 0.</span>
+
+<span class="sd">            max: Maximum records returned. Default 999 (server maximum).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of objects from the server.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            BilldotcomError, ServerResponseError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">bdc_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_map</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BilldotcomError</span><span class="p">(</span><span class="s">&#39;object type {} is not supported&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bdc_type</span><span class="p">))</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">start</span><span class="p">,</span>
+            <span class="nb">max</span> <span class="o">=</span> <span class="nb">max</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;sort&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">dict</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">asc</span><span class="o">=</span><span class="p">(</span><span class="n">order</span><span class="o">==</span><span class="s">&#39;asc&#39;</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">order</span> <span class="ow">in</span> <span class="n">sort</span>
+            <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">filters</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;filters&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">dict</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">op</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">filters</span>
+            <span class="p">]</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&#39;List/{}.json&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bdc_type</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">type_map</span><span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;entity&#39;</span><span class="p">]](</span><span class="o">**</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">response</span><span class="p">]</span>
+</div>
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logout</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Session.login"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.login">[docs]</a>    <span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initiate a session on the server.&quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;devKey&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">appkey</span><span class="p">,</span>
+            <span class="s">&#39;userName&#39;</span><span class="p">:</span> <span class="n">CONFIG</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;authentication&#39;</span><span class="p">,</span> <span class="s">&#39;email&#39;</span><span class="p">),</span>
+            <span class="s">&#39;password&#39;</span><span class="p">:</span> <span class="n">CONFIG</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;authentication&#39;</span><span class="p">,</span> <span class="s">&#39;password&#39;</span><span class="p">),</span>
+            <span class="s">&#39;orgId&#39;</span><span class="p">:</span> <span class="n">CONFIG</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;organization&#39;</span><span class="p">,</span> <span class="s">&#39;id&#39;</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">https_post</span><span class="p">(</span><span class="s">&#39;Login.json&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s">&#39;sessionId&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Session.logout"><a class="viewcode-back" href="../../index.html#billdotcom.session.Session.logout">[docs]</a>    <span class="k">def</span> <span class="nf">logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Shut down a session on the server.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BilldotcomError</span><span class="p">(</span><span class="s">&quot;cannot logout on a session that has not logged in&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&#39;Logout.json&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span> <span class="o">=</span> <span class="bp">None</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">billdotcom 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Amanda Quint, Matthew Thompson.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>

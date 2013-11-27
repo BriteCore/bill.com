@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>billdotcom.config &mdash; billdotcom 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="billdotcom 0.1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">billdotcom 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for billdotcom.config</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Global definitions, configuration and logging.</span>
+
+<span class="sd">The default configuration file (`billdotcom.cfg`) must contain the following:</span>
+<span class="sd">::</span>
+
+<span class="sd">    [authorization]</span>
+<span class="sd">    appkey = the application key from Bill.com</span>
+<span class="sd">    email = your user&#39;s email address</span>
+<span class="sd">    password = your user&#39;s password</span>
+<span class="sd">    [organization]</span>
+<span class="sd">    name = the name of your organization</span>
+<span class="sd">    id = the id for your organization. Obtain with the `billdotcom_getorglist` script.</span>
+
+<span class="sd">.. note::</span>
+<span class="sd">    The environment variable BILLDOTCOM_PREFIX can be used to control the location of</span>
+<span class="sd">    the config file and logging directory. If it does not exist the current directory</span>
+<span class="sd">    will be used.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">logging.handlers</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">ConfigParser</span>
+
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">ConfigurationError</span>
+
+<span class="n">API_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.bill.com/api/v2&#39;</span>
+
+<span class="n">ROOT</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;BILLDOTCOM_PREFIX&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+
+<span class="n">LOGDIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ROOT</span><span class="p">,</span> <span class="s">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">LOGFILE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">LOGDIR</span><span class="p">,</span> <span class="s">&#39;billdotcom.log&#39;</span><span class="p">)</span>
+<span class="n">CONFIGFILE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ROOT</span><span class="p">,</span> <span class="s">&#39;billdotcom.cfg&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_logger"><a class="viewcode-back" href="../../index.html#billdotcom.config.get_logger">[docs]</a><span class="k">def</span> <span class="nf">get_logger</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets the global logger and configures it if needed.</span>
+
+<span class="sd">    The default handlers will write DEBUG or higher to STDERR and log INFO or higher</span>
+<span class="sd">    to the default log file. See :mod:`billdotcom.config` for more about how to change this.</span>
+
+<span class="sd">    Example usage:</span>
+<span class="sd">        &gt;&gt;&gt; LOG = get_logger()</span>
+<span class="sd">        &gt;&gt;&gt; LOG.error(&quot;look, an error!&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Logger.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&quot;billdotcom&quot;</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+    <span class="c"># set up log format</span>
+    <span class="n">LOG_FILE_FORMAT</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> </span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span>
+    <span class="n">LOG_CONSOLE_FORMAT</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span>
+
+    <span class="c"># create log directory (if needed)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">LOGDIR</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">LOGDIR</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">log</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+        <span class="c"># add handler for file logging (info or greater)</span>
+        <span class="n">logfile</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">TimedRotatingFileHandler</span><span class="p">(</span><span class="n">LOGFILE</span><span class="p">,</span> <span class="n">when</span><span class="o">=</span><span class="s">&#39;midnight&#39;</span><span class="p">,</span> <span class="n">backupCount</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+        <span class="n">logfile</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+        <span class="n">logfile</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">LOG_FILE_FORMAT</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logfile</span><span class="p">)</span>
+
+        <span class="c"># add handler for stderr logging (debug or greater)</span>
+        <span class="n">console</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">LOG_CONSOLE_FORMAT</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">console</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">log</span>
+</div>
+<span class="n">CONFIG</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
+<span class="n">CONFIG</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">CONFIGFILE</span><span class="p">)</span>
+
+<div class="viewcode-block" id="validate_config"><a class="viewcode-back" href="../../index.html#billdotcom.config.validate_config">[docs]</a><span class="k">def</span> <span class="nf">validate_config</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Ensure that the required sections exist in the config file.</span>
+
+<span class="sd">    For proper configuration and more about the default location, see :mod:`billdotcom.config`.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ConfigurationError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">LOG</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span> <span class="c"># read and validate configuration</span>
+        <span class="n">CONFIG</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;authentication&#39;</span><span class="p">,</span> <span class="s">&#39;appkey&#39;</span><span class="p">)</span>
+        <span class="n">CONFIG</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;authentication&#39;</span><span class="p">,</span> <span class="s">&#39;email&#39;</span><span class="p">)</span>
+        <span class="n">CONFIG</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;authentication&#39;</span><span class="p">,</span> <span class="s">&#39;password&#39;</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s">&#39;configuration in {0} is not correct: {1:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">CONFIGFILE</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="n">LOG</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">billdotcom 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Amanda Quint, Matthew Thompson.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>

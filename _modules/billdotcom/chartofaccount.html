@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>billdotcom.chartofaccount &mdash; billdotcom 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="billdotcom 0.1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">billdotcom 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for billdotcom.chartofaccount</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: Chart of Account</span>
+<span class="sd">   :synopsis: A model for the Chart of Account object.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">.jsondict</span> <span class="kn">import</span> <span class="n">JSONDict</span>
+
+<div class="viewcode-block" id="ChartOfAccount"><a class="viewcode-back" href="../../index.html#billdotcom.chartofaccount.ChartOfAccount">[docs]</a><span class="k">class</span> <span class="nc">ChartOfAccount</span><span class="p">(</span><span class="n">JSONDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This models the Chart of Account object. This is a mapping</span>
+<span class="sd">    of the account type.</span>
+
+<span class="sd">    Required:</span>
+<span class="sd">        name (str): The name of the account (i.e. Checking)</span>
+<span class="sd">        accountType (enum): Type of Account (This is not required in the API, but fails if not passed)</span>
+<span class="sd">                            Unspecified = 0</span>
+<span class="sd">                            Accounts Payable = 1</span>
+<span class="sd">                            Accounts Receivable = 2</span>
+<span class="sd">                            Bank = 3</span>
+<span class="sd">                            Cost of Goods Sold = 4</span>
+<span class="sd">                            Credit Card = 5</span>
+<span class="sd">                            Equity = 6</span>
+<span class="sd">                            Expenses = 7</span>
+<span class="sd">                            Fixed Assed = 8</span>
+<span class="sd">                            Income = 9</span>
+<span class="sd">                            Long Term Liability = 10</span>
+<span class="sd">                            Other Asset = 11</span>
+<span class="sd">                            Other Current Asset = 12</span>
+<span class="sd">                            Other Current Liability = 13</span>
+<span class="sd">                            Other Expense = 14</span>
+<span class="sd">                            Other Income = 15</span>
+<span class="sd">                            Non-Posting = 16</span>
+
+<span class="sd">    Optional:</span>
+<span class="sd">        accountNumber (str): The account number</span>
+<span class="sd">        description (str): Description of the accont</span>
+<span class="sd">        parentChartOfAccountId (ChartOfAccountId): The parent chart of account</span>
+<span class="sd">        integrationId (str): The ID of the record in an accounting system like QuickBooks.</span>
+<span class="sd">        externalId (str): The external id of this account.</span>
+<span class="sd">        createdTime (datetime): The create date.</span>
+<span class="sd">        updatedTime (datetime): The last update date.</span>
+<span class="sd">        lastSyncTime (SettableDateTime): The last time this object was synced.</span>
+<span class="sd">        isActive (enum): Whether or not this chart of account is active.</span>
+<span class="sd">                         1 = active</span>
+<span class="sd">                         2 = inactive</span>
+
+<span class="sd">    Creation:</span>
+<span class="sd">        Create a Chart of Account object and create it on the server side with</span>
+<span class="sd">        with :func:`billdotcom.session.Session.create_chartofaccount`. For example:</span>
+
+<span class="sd">            &gt;&gt;&gt; with Session() as s:</span>
+<span class="sd">            &gt;&gt;&gt;     a = ChartOfAccount(name=&quot;My Credit Card&quot;, </span>
+<span class="sd">                    &gt;&gt;&gt;                accountType=5,</span>
+<span class="sd">                    &gt;&gt;&gt;                )</span>
+<span class="sd">            &gt;&gt;&gt;     a[&#39;id&#39;] = s.create(a)</span>
+
+<span class="sd">    Retrieval:</span>
+<span class="sd">        Download a list of Chart of Account objects from the server with the Session.</span>
+<span class="sd">        For example:</span>
+
+<span class="sd">            &gt;&gt;&gt; with Session() as s:</span>
+<span class="sd">            &gt;&gt;&gt;     print [x[&#39;id&#39;] for x in s.list(&#39;ChartOfAccount&#39;)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignore_required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s">&#39;name&#39;</span><span class="p">,</span>
+            <span class="s">&#39;accountType&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ignore_required</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">required</span> <span class="o">=</span> <span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">ChartOfAccount</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="s">&#39;ChartOfAccount&#39;</span><span class="p">,</span> <span class="n">required</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">billdotcom 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Amanda Quint, Matthew Thompson.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>
